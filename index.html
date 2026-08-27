@@ -9,137 +9,58 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
   :root{
-    --sky-top:#2298FF;
-    --sky-bottom:#9BE2FF;
-    --sun:#FFF066;
-    --grass-1:#25B856;
-    --grass-2:#34D66A;
-    --road-1:#1A1A24;
-    --road-2:#282836;
-    --good:#00FF7F;
-    --bad:#FF3355;
-    --gold:#FFD700;
-    --gold-dark:#FFAA00;
-    --ink:#0D1226;
-    --cream:#FFFFFD;
-    --sky-accent:#00BFFF;
-    --font-display:'Baloo 2', sans-serif;
-    --font-body:'Nunito', sans-serif;
+    --sky-top:#2298FF; --sky-bottom:#9BE2FF; --sun:#FFF066;
+    --grass-1:#25B856; --grass-2:#34D66A; --road-1:#1A1A24; --road-2:#282836;
+    --good:#00FF7F; --bad:#FF3355; --gold:#FFD700; --gold-dark:#FFAA00;
+    --ink:#0D1226; --cream:#FFFFFD; --sky-accent:#00BFFF;
+    --font-display:'Baloo 2', sans-serif; --font-body:'Nunito', sans-serif;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{
-    margin:0; padding:0; width:100%; height:100%;
-    overflow:hidden; background:var(--ink);
-    font-family:var(--font-body);
-    touch-action:none;
-    user-select:none;
-  }
+  html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:var(--ink); font-family:var(--font-body); touch-action:none; user-select:none; }
   #gameCanvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-
-  /* ---------- LOBBY ---------- */
-  #lobby{
-    position:absolute; inset:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:space-between;
-    background:linear-gradient(180deg, var(--sky-top) 0%, #62B6FF 38%, var(--grass-2) 38%, var(--grass-1) 100%);
-    overflow:hidden; z-index:20;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  }
-  .sun{
-    position:absolute; top:5%; right:8%; width:76px; height:76px; border-radius:50%;
-    background:radial-gradient(circle, #FFFFFF 0%, var(--sun) 55%, rgba(255,240,102,0) 75%);
-    box-shadow:0 0 50px 25px rgba(255,240,102,0.7);
-  }
+  #lobby{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:space-between; background:linear-gradient(180deg, var(--sky-top) 0%, #62B6FF 38%, var(--grass-2) 38%, var(--grass-1) 100%); overflow:hidden; z-index:20; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .sun{ position:absolute; top:5%; right:8%; width:76px; height:76px; border-radius:50%; background:radial-gradient(circle, #FFFFFF 0%, var(--sun) 55%, rgba(255,240,102,0) 75%); box-shadow:0 0 50px 25px rgba(255,240,102,0.7); }
   .lobby-top{ text-align:center; margin-top:2vh; z-index:2; width:100%; position:relative; padding:0 16px; }
-
-  .title{
-    font-family:var(--font-display); font-weight:800; font-size:clamp(38px, 10vw, 68px);
-    color:var(--cream); letter-spacing:1px; margin:0;
-    -webkit-text-stroke:3.5px var(--ink);
-    text-shadow: 0 6px 0 var(--ink), 0 10px 20px rgba(0,0,0,0.4);
-    transform:rotate(-2deg);
-  }
+  .title{ font-family:var(--font-display); font-weight:800; font-size:clamp(38px, 10vw, 68px); color:var(--cream); letter-spacing:1px; margin:0; -webkit-text-stroke:3.5px var(--ink); text-shadow: 0 6px 0 var(--ink), 0 10px 20px rgba(0,0,0,0.4); transform:rotate(-2deg); }
   .title span{ color:var(--gold); -webkit-text-stroke:3.5px var(--ink); }
-  .subtitle{
-    font-family:var(--font-body); font-weight:900; color:var(--ink);
-    background:var(--cream); display:inline-block; padding:4px 14px; border-radius:20px;
-    margin-top:6px; font-size:clamp(11px, 3.1vw, 13px); letter-spacing:0.5px; box-shadow:0 4px 0 rgba(0,0,0,0.2);
-  }
-  .mascot-wrap{
-    position:relative; z-index:2; display:flex; align-items:flex-end; justify-content:center;
-    height:15vh; margin-top:0;
-  }
-  .mascot-shadow{
-    width:84px; height:16px; background:rgba(0,0,0,0.3); border-radius:50%;
-    filter:blur(2px); margin-top:-14px;
-    animation: shadowPulse 1.1s ease-in-out infinite;
-  }
+  .subtitle{ font-family:var(--font-body); font-weight:900; color:var(--ink); background:var(--cream); display:inline-block; padding:4px 14px; border-radius:20px; margin-top:6px; font-size:clamp(11px, 3.1vw, 13px); letter-spacing:0.5px; box-shadow:0 4px 0 rgba(0,0,0,0.2); }
+  .mascot-wrap{ position:relative; z-index:2; display:flex; align-items:flex-end; justify-content:center; height:15vh; margin-top:0; }
+  .mascot-shadow{ width:84px; height:16px; background:rgba(0,0,0,0.3); border-radius:50%; filter:blur(2px); margin-top:-14px; animation: shadowPulse 1.1s ease-in-out infinite; }
   @keyframes shadowPulse{ 0%,100%{transform:scaleX(1);opacity:0.4} 50%{transform:scaleX(0.7);opacity:0.2} }
-
   .stats-row{ display:flex; gap:6px; z-index:2; margin-bottom:1vh; flex-wrap:wrap; justify-content:center; padding:0 16px; }
-  .stat-card{
-    background:var(--ink); color:var(--cream); border-radius:14px; padding:6px 10px;
-    min-width:60px; text-align:center; box-shadow:0 4px 0 rgba(0,0,0,0.35);
-    border:2.5px solid rgba(255,255,255,0.15);
-  }
+  .stat-card{ background:var(--ink); color:var(--cream); border-radius:14px; padding:6px 10px; min-width:60px; text-align:center; box-shadow:0 4px 0 rgba(0,0,0,0.35); border:2.5px solid rgba(255,255,255,0.15); }
   .stat-card .val{ font-family:var(--font-display); font-size:15px; font-weight:800; color:var(--gold); }
   .stat-card .lbl{ font-size:8px; font-weight:900; letter-spacing:0.5px; opacity:0.85; text-transform:uppercase; }
-
   .lobby-bottom{ z-index:2; margin-bottom:2.5vh; display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; padding:0 16px; }
   .goal-strip{ font-size:clamp(10px, 3vw, 12px); font-weight:900; color:var(--ink); background:rgba(255,255,255,0.95); padding:5px 12px; border-radius:16px; box-shadow:0 3px 0 rgba(0,0,0,0.15); }
   .btn-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; width:100%; }
-  
-  .play-btn{
-    font-family:var(--font-display); font-weight:800; font-size:clamp(18px, 5.5vw, 24px); letter-spacing:1px;
-    color:var(--ink); background:var(--gold); border:3.5px solid var(--ink);
-    padding:10px 26px; border-radius:20px; cursor:pointer;
-    box-shadow:0 6px 0 var(--gold-dark); transition:transform 0.06s ease;
-  }
+  .play-btn{ font-family:var(--font-display); font-weight:800; font-size:clamp(18px, 5.5vw, 24px); letter-spacing:1px; color:var(--ink); background:var(--gold); border:3.5px solid var(--ink); padding:10px 26px; border-radius:20px; cursor:pointer; box-shadow:0 6px 0 var(--gold-dark); transition:transform 0.06s ease; }
   .play-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 var(--gold-dark); }
-  
-  .menu-btn{
-    font-family:var(--font-display); font-weight:800; font-size:clamp(14px, 4vw, 18px);
-    border:3.5px solid var(--ink); padding:10px 14px; border-radius:20px; cursor:pointer;
-    box-shadow:0 6px 0 rgba(0,0,0,0.35); transition:transform 0.06s ease; color:#fff;
-  }
+  .menu-btn{ font-family:var(--font-display); font-weight:800; font-size:clamp(14px, 4vw, 18px); border:3.5px solid var(--ink); padding:10px 14px; border-radius:20px; cursor:pointer; box-shadow:0 6px 0 rgba(0,0,0,0.35); transition:transform 0.06s ease; color:#fff; }
   .menu-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,0.35); }
   .shop-btn-bg{ background:linear-gradient(135deg,#8A2BE2,#FF1493); }
   .leaderboard-btn-bg{ background:linear-gradient(135deg,#00BFFF,#0055FF); }
   .account-btn-bg{ background:linear-gradient(135deg,#FF8800,#FF3300); }
-  
-  .lobby-rebirth-btn{
-    font-family:var(--font-display); font-weight:800; font-size:clamp(14px, 4vw, 18px);
-    border:3.5px solid var(--ink); padding:10px 14px; border-radius:20px; cursor:pointer;
-    color:var(--ink); background:#FF33CC; box-shadow:0 6px 0 #A30075; transition:transform 0.06s ease;
-  }
+  .lobby-rebirth-btn{ font-family:var(--font-display); font-weight:800; font-size:clamp(14px, 4vw, 18px); border:3.5px solid var(--ink); padding:10px 14px; border-radius:20px; cursor:pointer; color:var(--ink); background:#FF33CC; box-shadow:0 6px 0 #A30075; transition:transform 0.06s ease; }
   .lobby-rebirth-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #A30075; }
   .lobby-rebirth-btn:disabled{ background:#ccc; color:#666; box-shadow:none; cursor:not-allowed; }
-  
   .howto{ font-size:clamp(10px, 2.8vw, 11px); color:var(--cream); text-shadow:0 1px 3px rgba(0,0,0,0.6); font-weight:800; text-align:center; max-width:300px; }
-
-  /* ---------- HUD ---------- */
   #hud{ position:absolute; inset:0; pointer-events:none; z-index:10; display:none; font-family:var(--font-body); }
   .hud-top{ position:absolute; top:max(12px, env(safe-area-inset-top)); left:12px; right:12px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
-  .pill{
-    background:rgba(13,18,38,0.9); color:var(--cream); border-radius:16px; padding:8px 12px;
-    font-weight:900; font-size:13px; display:flex; align-items:center; gap:6px;
-    box-shadow:0 4px 0 rgba(0,0,0,0.3); border:2px solid rgba(255,255,255,0.1);
-  }
+  .pill{ background:rgba(13,18,38,0.9); color:var(--cream); border-radius:16px; padding:8px 12px; font-weight:900; font-size:13px; display:flex; align-items:center; gap:6px; box-shadow:0 4px 0 rgba(0,0,0,0.3); border:2px solid rgba(255,255,255,0.1); }
   .pill .gold{ color:var(--gold); }
   .height-wrap{ flex:1; max-width:240px; background:rgba(13,18,38,0.9); border-radius:16px; padding:8px 12px; box-shadow:0 4px 0 rgba(0,0,0,0.3); border:2px solid rgba(255,255,255,0.1); }
   .height-labels{ display:flex; justify-content:space-between; color:var(--cream); font-size:11px; font-weight:900; margin-bottom:4px;}
   .height-bar-bg{ height:10px; border-radius:6px; background:rgba(255,255,255,0.2); overflow:hidden; }
   .height-bar-fill{ height:100%; background:linear-gradient(90deg,var(--sky-accent),var(--good)); border-radius:6px; transition:width 0.15s ease; }
   .timer-pill{ font-variant-numeric: tabular-nums; }
-  .exit-btn{
-    pointer-events: auto; background:var(--bad); color:#fff; border:3px solid var(--ink);
-    border-radius:14px; padding:8px 12px; font-family:var(--font-display); font-weight:800; font-size:13px;
-    cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,0.3); transition:transform 0.06s ease;
-  }
+  .exit-btn{ pointer-events: auto; background:var(--bad); color:#fff; border:3px solid var(--ink); border-radius:14px; padding:8px 12px; font-family:var(--font-display); font-weight:800; font-size:13px; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,0.3); transition:transform 0.06s ease; }
   .exit-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.3); }
-
-  /* ---------- RESULT ---------- */
   #result{ position:absolute; inset:0; z-index:30; display:none; align-items:center; justify-content:center; background:rgba(5,8,18,0.7); padding:16px; }
   .result-card{ background:var(--cream); border-radius:28px; padding:30px 24px; text-align:center; width:min(92vw,380px); border:5px solid var(--ink); box-shadow:0 16px 0 rgba(0,0,0,0.4); }
   .result-emoji{ font-size:54px; line-height:1; margin-bottom:6px; }
@@ -151,37 +72,21 @@
   .btn:active{ transform:translateY(4px); box-shadow:0 1px 0 rgba(0,0,0,0.3); }
   .btn-primary{ background:var(--sky-accent); color:#fff; }
   .btn-secondary{ background:var(--cream); color:var(--ink); }
-
-  /* ---------- MODALS ---------- */
   .modal-overlay{ position:absolute; inset:0; z-index:40; display:none; align-items:center; justify-content:center; background:rgba(5,8,18,0.75); padding:16px; }
-  .modal-card{
-    background:var(--cream); border-radius:28px; padding:20px; width:min(96vw,460px); max-height:85vh; overflow-y:auto;
-    border:5px solid var(--ink); box-shadow:0 16px 0 rgba(0,0,0,0.4); display:flex; flex-direction:column;
-  }
+  .modal-card{ background:var(--cream); border-radius:28px; padding:20px; width:min(96vw,460px); max-height:85vh; overflow-y:auto; border:5px solid var(--ink); box-shadow:0 16px 0 rgba(0,0,0,0.4); display:flex; flex-direction:column; }
   .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
   .modal-title{ font-family:var(--font-display); font-weight:800; font-size:22px; color:var(--ink); margin:0; }
-  
   .shop-currency-row{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
   .currency-pill{ font-family:var(--font-display); font-weight:800; background:var(--ink); padding:4px 8px; border-radius:12px; font-size:11px; }
   .sc-coins{ color:var(--gold); }
   .sc-score{ color:#00FF7F; }
   .sc-trophies{ color:#FF33CC; }
-
-  .rebirth-banner{
-    background:linear-gradient(135deg, #7B2FF7, #FF1493);
-    border:3.5px solid var(--ink); border-radius:18px; padding:12px; color:#fff; margin-bottom:14px;
-    box-shadow:0 5px 0 rgba(0,0,0,0.25); display:flex; flex-direction:column; gap:6px; text-align:center;
-  }
+  .rebirth-banner{ background:linear-gradient(135deg, #7B2FF7, #FF1493); border:3.5px solid var(--ink); border-radius:18px; padding:12px; color:#fff; margin-bottom:14px; box-shadow:0 5px 0 rgba(0,0,0,0.25); display:flex; flex-direction:column; gap:6px; text-align:center; }
   .rebirth-banner h3{ font-family:var(--font-display); margin:0; font-size:17px; font-weight:800; }
   .rebirth-banner p{ margin:0; font-size:11px; font-weight:700; opacity:0.95; }
-  .rebirth-btn{
-    font-family:var(--font-display); font-weight:800; font-size:14px; background:var(--gold); color:var(--ink);
-    border:3px solid var(--ink); border-radius:12px; padding:6px 14px; cursor:pointer; align-self:center;
-    box-shadow:0 4px 0 rgba(0,0,0,0.2); transition:transform 0.06s ease;
-  }
+  .rebirth-btn{ font-family:var(--font-display); font-weight:800; font-size:14px; background:var(--gold); color:var(--ink); border:3px solid var(--ink); border-radius:12px; padding:6px 14px; cursor:pointer; align-self:center; box-shadow:0 4px 0 rgba(0,0,0,0.2); transition:transform 0.06s ease; }
   .rebirth-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.2); }
   .rebirth-btn:disabled{ background:#ccc; color:#666; cursor:not-allowed; box-shadow:none; }
-
   .swatch-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .swatch-card{ background:#fff; border:3.5px solid var(--ink); border-radius:16px; padding:10px; text-align:center; box-shadow:0 4px 0 rgba(0,0,0,0.15); }
   .swatch-preview{ height:50px; display:flex; align-items:center; justify-content:center; }
@@ -193,25 +98,16 @@
   .swatch-btn.equipped{ background:var(--gold); color:var(--ink); cursor:default; }
   .swatch-btn.locked{ background:#ddd; color:#888; cursor:not-allowed; }
   .swatch-txt{ font-family:'Baloo 2', sans-serif; font-weight:800; font-size:26px; }
-
-  /* LEADERBOARD STYLES */
   .lb-list{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; max-height:300px; overflow-y:auto; }
-  .lb-item{
-    display:flex; justify-content:space-between; align-items:center; background:#fff;
-    border:3px solid var(--ink); border-radius:14px; padding:10px 14px; font-weight:900; font-size:14px; color:var(--ink);
-    box-shadow:0 3px 0 rgba(0,0,0,0.15);
-  }
+  .lb-item{ display:flex; justify-content:space-between; align-items:center; background:#fff; border:3px solid var(--ink); border-radius:14px; padding:10px 14px; font-weight:900; font-size:14px; color:var(--ink); box-shadow:0 3px 0 rgba(0,0,0,0.15); }
   .lb-item.current-user{ background:#E0F8FF; border-color:var(--sky-accent); }
   .lb-rank{ font-family:var(--font-display); font-size:18px; width:30px; }
   .lb-name{ flex:1; text-align:left; padding:0 10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .lb-score{ font-family:var(--font-display); color:#008844; font-size:16px; }
-
-  /* ACCOUNT STYLES */
+  .lb-unauth-box{ background:#FFF3CD; border:3.5px solid #856404; border-radius:18px; padding:16px; text-align:center; margin-bottom:14px; }
+  .lb-unauth-box p{ margin:0 0 10px; font-size:13px; font-weight:900; color:#856404; }
   .auth-form{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
-  .auth-input{
-    font-family:var(--font-body); font-weight:800; font-size:14px; border:3px solid var(--ink);
-    border-radius:14px; padding:10px 14px; background:#fff; color:var(--ink); outline:none;
-  }
+  .auth-input{ font-family:var(--font-body); font-weight:800; font-size:14px; border:3px solid var(--ink); border-radius:14px; padding:10px 14px; background:#fff; color:var(--ink); outline:none; }
   .auth-error{ color:var(--bad); font-size:12px; font-weight:900; text-align:center; min-height:16px; margin:0; }
   .auth-info{ background:#E8F8FF; border:3px solid var(--sky-accent); border-radius:16px; padding:14px; text-align:center; margin-bottom:14px; }
   .auth-info h3{ font-family:var(--font-display); margin:0 0 4px; font-size:18px; color:var(--ink); }
@@ -222,23 +118,19 @@
 
 <canvas id="gameCanvas"></canvas>
 
-<!-- LOBBY -->
 <div id="lobby">
   <div class="sun"></div>
   <div class="lobby-top">
     <h1 class="title">67 <span>RUN</span></h1>
     <div class="subtitle" id="lobbySubtitle">Wachse so groß wie möglich bis zur Ziellinie 🏁</div>
   </div>
-
   <div class="mascot-wrap">
     <div style="display:flex; flex-direction:column; align-items:center;">
       <canvas id="mascotCanvas" width="340" height="340" style="width:130px; height:130px;"></canvas>
       <div class="mascot-shadow"></div>
     </div>
   </div>
-
   <div class="stats-row" id="lobbyStats"></div>
-
   <div class="lobby-bottom">
     <div class="goal-strip">Start bei 1.0 ft · Ziel 6.7 ft · 100x ft Münzen & Score</div>
     <div class="btn-row">
@@ -252,7 +144,6 @@
   </div>
 </div>
 
-<!-- HUD -->
 <div id="hud">
   <div class="hud-top">
     <div class="pill">🪙 <span class="gold" id="hudCoins">0</span></div>
@@ -265,7 +156,6 @@
   </div>
 </div>
 
-<!-- RESULT -->
 <div id="result">
   <div class="result-card">
     <div class="result-emoji" id="resEmoji">🏆</div>
@@ -279,7 +169,6 @@
   </div>
 </div>
 
-<!-- SHOP MODAL -->
 <div class="modal-overlay" id="shopModal">
   <div class="modal-card">
     <div class="modal-header">
@@ -290,20 +179,16 @@
         <div class="currency-pill sc-trophies">🏆 <span id="shopTrophies">0</span></div>
       </div>
     </div>
-
-    <!-- REBIRTH SECTION -->
     <div class="rebirth-banner" id="rebirthBanner">
       <h3 id="rebirthTitle">⚡ Rebirth I</h3>
       <p id="rebirthDesc">Setzt Münzen & Farben zurück, gibt aber dauerhaft +0.1x Münzen!</p>
       <button class="rebirth-btn" id="rebirthBtn">Rebirth kaufen (5 🏆)</button>
     </div>
-
     <div class="swatch-grid" id="shopGrid"></div>
     <button class="btn btn-secondary" style="width:100%; margin-top:14px;" id="shopCloseBtn">Schließen</button>
   </div>
 </div>
 
-<!-- LEADERBOARD MODAL -->
 <div class="modal-overlay" id="lbModal">
   <div class="modal-card">
     <div class="modal-header">
@@ -315,7 +200,6 @@
   </div>
 </div>
 
-<!-- ACCOUNT MODAL -->
 <div class="modal-overlay" id="accountModal">
   <div class="modal-card">
     <div class="modal-header">
@@ -327,10 +211,9 @@
   </div>
 </div>
 
-<!-- Firebase SDKs (Modulare Version) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, collection, doc, setDoc, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<script>
+(function(){
+  "use strict";
 
   /* ============ FIREBASE CONFIGURATION ============ */
   const firebaseConfig = {
@@ -342,9 +225,21 @@
     appId: "1:802143091769:web:8368a416897d8ccaaae1e8"
   };
 
-  // Firebase initialisieren
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  const CONFIG_IS_PLACEHOLDER = Object.values(firebaseConfig).some(v => typeof v === 'string' && v.indexOf('HIER') !== -1);
+  let firebaseReady = false;
+  let db = null;
+
+  if(!CONFIG_IS_PLACEHOLDER){
+    try{
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      firebaseReady = true;
+    }catch(e){
+      console.error('Firebase Init Fehler:', e);
+    }
+  } else {
+    console.warn('[67 RUN] firebaseConfig enthält noch Platzhalterwerte ("HIER_..."). Bitte durch echte Werte aus der Firebase Console ersetzen.');
+  }
 
   /* ============ AUDIO API ============ */
   let audioCtx = null;
@@ -355,7 +250,6 @@
     }
     if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
   }
-
   function playTone(freq, duration, type='sine', gainVal=0.1){
     initAudioCtx();
     if(!audioCtx) return;
@@ -372,7 +266,6 @@
       osc.stop(audioCtx.currentTime + duration);
     } catch(e){}
   }
-
   function sfxClick(){ playTone(520, 0.06, 'triangle', 0.12); }
   function sfxGood(){ playTone(660, 0.1, 'sine', 0.18); setTimeout(()=>playTone(980, 0.12, 'sine', 0.18), 70); }
   function sfxBad(){ playTone(160, 0.18, 'sawtooth', 0.15); setTimeout(()=>playTone(110, 0.2, 'sawtooth', 0.15), 90); }
@@ -432,19 +325,14 @@
     }catch(e){}
   }
 
-  // ONLINE LEADERBOARD SYNC VIA FIRESTORE
-  async function updateFirebaseLeaderboardEntry(){
-    if(!currentUser) return;
-    try {
-      await setDoc(doc(db, "leaderboard67", currentUser), {
-        name: currentUser,
-        score: stats.score,
-        trophies: stats.trophies,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-    } catch(err) {
-      console.error("Firebase Sync Error:", err);
-    }
+  function updateFirebaseLeaderboardEntry(){
+    if(!currentUser || !db) return;
+    db.collection("leaderboard67").doc(currentUser).set({
+      name: currentUser,
+      score: stats.score,
+      trophies: stats.trophies,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch(err => console.error("Firebase Sync Error:", err.code, err.message));
   }
 
   function renderLobbyStats(){
@@ -468,16 +356,13 @@
     lobbyRBtn.disabled = stats.trophies < nextRebirthCost;
   }
 
-  /* ============ SHOP UI ============ */
   function renderShop(){
     document.getElementById('shopCoins').textContent = stats.coins;
     document.getElementById('shopScore').textContent = stats.score;
     document.getElementById('shopTrophies').textContent = stats.trophies;
-
     const nextRebirthCost = (stats.rebirths + 1) * 5;
     const currentMult = (1.0 + stats.rebirths * 0.1).toFixed(1);
     const nextMult = (1.0 + (stats.rebirths + 1) * 0.1).toFixed(1);
-    
     document.getElementById('rebirthTitle').textContent = `⚡ Rebirth ${stats.rebirths+1} (Aktuell: ${currentMult}x Münzen)`;
     document.getElementById('rebirthDesc').textContent = `Setzt Münzen & Farben zurück, gibt dir aber dauerhaft ${nextMult}x Münzen! (Score bleibt erhalten)`;
     const rBtn = document.getElementById('rebirthBtn');
@@ -547,44 +432,67 @@
   document.getElementById('lobbyRebirthBtn').addEventListener('click', performRebirth);
 
   /* ============ ONLINE LEADERBOARD UI ============ */
-  async function renderLeaderboard(){
+  function renderLeaderboard(){
     const content = document.getElementById('lbContent');
+
+    if(!firebaseReady){
+      content.innerHTML = `
+        <div class="lb-unauth-box">
+          <p>⚠️ Firebase ist noch nicht eingerichtet.</p>
+          <p style="margin-top:6px; font-size:11px; font-weight:700;">
+            ${CONFIG_IS_PLACEHOLDER
+              ? 'Die <code>firebaseConfig</code> im HTML-Code enthält noch Platzhalterwerte ("HIER_..."). Ersetze sie durch die echten Werte aus deiner Firebase-Konsole (Projekteinstellungen → Allgemein → "Meine Apps" → Web-App-Konfiguration).'
+              : 'Die Firebase-Initialisierung ist fehlgeschlagen. Öffne die Browser-Konsole (F12) für die genaue Fehlermeldung.'}
+          </p>
+        </div>`;
+      return;
+    }
+
     content.innerHTML = `<p style="text-align:center; font-weight:900; color:#6A6A7A;">Lade Online-Bestenliste...</p>`;
+    if(currentUser) updateFirebaseLeaderboardEntry();
 
-    if(currentUser){
-      await updateFirebaseLeaderboardEntry();
-    }
-
-    try {
-      const q = query(collection(db, "leaderboard67"), orderBy("score", "desc"), limit(20));
-      const querySnapshot = await getDocs(q);
-
-      if(querySnapshot.empty){
-        content.innerHTML = `<p style="text-align:center; font-weight:900; color:#6A6A7A;">Noch keine Online-Einträge vorhanden.</p>`;
-        return;
-      }
-
-      let html = '<div class="lb-list">';
-      let idx = 0;
-      querySnapshot.forEach((docSnap) => {
-        const entry = docSnap.data();
-        const isMe = entry.name === currentUser;
-        const rankEmoji = idx===0?'🥇':(idx===1?'🥈':(idx===2?'🥉':`#${idx+1}`));
-        html += `
-          <div class="lb-item ${isMe?'current-user':''}">
-            <div class="lb-rank">${rankEmoji}</div>
-            <div class="lb-name">${entry.name}${isMe?' (Du)':''}</div>
-            <div class="lb-score">⭐ ${entry.score}</div>
-          </div>
+    db.collection("leaderboard67")
+      .orderBy("score", "desc")
+      .limit(20)
+      .get()
+      .then((querySnapshot) => {
+        if(querySnapshot.empty){
+          content.innerHTML = `<p style="text-align:center; font-weight:900; color:#6A6A7A;">Noch keine Online-Einträge vorhanden.</p>`;
+          return;
+        }
+        let html = '<div class="lb-list">';
+        let idx = 0;
+        querySnapshot.forEach((doc) => {
+          const entry = doc.data();
+          const isMe = entry.name === currentUser;
+          const rankEmoji = idx===0?'🥇':(idx===1?'🥈':(idx===2?'🥉':`#${idx+1}`));
+          html += `
+            <div class="lb-item ${isMe?'current-user':''}">
+              <div class="lb-rank">${rankEmoji}</div>
+              <div class="lb-name">${entry.name}${isMe?' (Du)':''}</div>
+              <div class="lb-score">⭐ ${entry.score}</div>
+            </div>
+          `;
+          idx++;
+        });
+        html += '</div>';
+        content.innerHTML = html;
+      })
+      .catch((error) => {
+        console.error("Fehler beim Laden des Leaderboards:", error.code, error.message);
+        let hint = 'Öffne die Browser-Konsole (F12) für Details.';
+        if(error.code === 'permission-denied'){
+          hint = 'Deine Firestore-Sicherheitsregeln blockieren den Zugriff. Siehe Anleitung zu den Firestore-Rules.';
+        } else if(error.code === 'unavailable' || error.code === 'failed-precondition'){
+          hint = 'Firestore scheint nicht erreichbar/eingerichtet zu sein. Prüfe, ob im Firebase-Projekt eine Firestore-Datenbank angelegt wurde.';
+        } else if(error.code === 'not-found'){
+          hint = 'Projekt/Datenbank wurde nicht gefunden. Prüfe die projectId in firebaseConfig.';
+        }
+        content.innerHTML = `
+          <p style="text-align:center; font-weight:900; color:var(--bad);">Fehler: ${error.code || error.message}</p>
+          <p style="text-align:center; font-size:11px; font-weight:700; color:#6A6A7A;">${hint}</p>
         `;
-        idx++;
       });
-      html += '</div>';
-      content.innerHTML = html;
-    } catch(error) {
-      console.error("Fehler beim Laden des Leaderboards:", error);
-      content.innerHTML = `<p style="text-align:center; font-weight:900; color:var(--bad);">Fehler beim Laden der Online-Daten.</p>`;
-    }
   }
 
   /* ============ ACCOUNT UI ============ */
@@ -617,35 +525,25 @@
           <button class="btn btn-secondary" style="width:100%; background:#00FF7F;" id="registerBtn">Neuen Account erstellen</button>
         </div>
       `;
-
       document.getElementById('loginBtn').addEventListener('click', ()=>{
         sfxClick();
         const u = document.getElementById('authUsername').value.trim();
         const p = document.getElementById('authPassword').value;
         const err = document.getElementById('authError');
         if(!u || !p){ err.textContent = 'Bitte alle Felder ausfüllen!'; return; }
-
         try{
           const savedPass = localStorage.getItem('userPass67_' + u);
-          if(savedPass === null){
-            err.textContent = 'Account existiert nicht! Bitte registrieren.';
-            return;
-          }
-          if(savedPass !== p){
-            err.textContent = 'Falsches Passwort!';
-            return;
-          }
+          if(savedPass === null){ err.textContent = 'Account existiert nicht! Bitte registrieren.'; return; }
+          if(savedPass !== p){ err.textContent = 'Falsches Passwort!'; return; }
           localStorage.setItem('activeUser67', u);
           currentUser = u;
           const userSave = localStorage.getItem('userSave67_' + u);
           if(userSave) stats = {...DEFAULT_STATS, ...JSON.parse(userSave)};
           else stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
-
           renderLobbyStats();
           document.getElementById('accountModal').style.display = 'none';
         }catch(e){ err.textContent = 'Fehler beim Anmelden.'; }
       });
-
       document.getElementById('registerBtn').addEventListener('click', ()=>{
         sfxClick();
         const u = document.getElementById('authUsername').value.trim();
@@ -653,19 +551,14 @@
         const err = document.getElementById('authError');
         if(!u || !p){ err.textContent = 'Bitte alle Felder ausfüllen!'; return; }
         if(u.length < 3){ err.textContent = 'Name muss min. 3 Zeichen lang sein!'; return; }
-
         try{
           const existing = localStorage.getItem('userPass67_' + u);
-          if(existing !== null){
-            err.textContent = 'Benutzername ist bereits vergeben!';
-            return;
-          }
+          if(existing !== null){ err.textContent = 'Benutzername ist bereits vergeben!'; return; }
           localStorage.setItem('userPass67_' + u, p);
           localStorage.setItem('activeUser67', u);
           currentUser = u;
           stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
           saveUserData();
-
           renderLobbyStats();
           document.getElementById('accountModal').style.display = 'none';
         }catch(e){ err.textContent = 'Fehler bei Registrierung.'; }
@@ -673,21 +566,17 @@
     }
   }
 
-  /* MODAL EVENT LISTENERS */
   document.getElementById('shopOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderShop(); document.getElementById('shopModal').style.display = 'flex'; });
   document.getElementById('shopCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('shopModal').style.display = 'none'; });
   document.getElementById('shopModal').addEventListener('click', (e)=>{ if(e.target.id === 'shopModal') document.getElementById('shopModal').style.display = 'none'; });
-
   document.getElementById('lbOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderLeaderboard(); document.getElementById('lbModal').style.display = 'flex'; });
   document.getElementById('lbCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('lbModal').style.display = 'none'; });
   document.getElementById('lbCloseBtn2').addEventListener('click', ()=>{ sfxClick(); document.getElementById('lbModal').style.display = 'none'; });
   document.getElementById('lbModal').addEventListener('click', (e)=>{ if(e.target.id === 'lbModal') document.getElementById('lbModal').style.display = 'none'; });
-
   document.getElementById('accountOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderAccountModal(); document.getElementById('accountModal').style.display = 'flex'; });
   document.getElementById('accountCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('accountModal').style.display = 'none'; });
   document.getElementById('accountCloseBtn2').addEventListener('click', ()=>{ sfxClick(); document.getElementById('accountModal').style.display = 'none'; });
   document.getElementById('accountModal').addEventListener('click', (e)=>{ if(e.target.id === 'accountModal') document.getElementById('accountModal').style.display = 'none'; });
-
 
   /* ============ GAME CONSTANTS & LOGIC ============ */
   const START_HEIGHT = 1.0;
@@ -785,12 +674,8 @@
     for(let i=0; i<14; i++){
       const side = Math.random() < 0.5 ? -1 : 1;
       sceneryObjects.push({
-        side: side,
-        offset: rand(0.6, 2.2),
-        depth: rand(0.02, 0.98),
-        type: Math.random() < 0.6 ? 'tree' : 'bush',
-        scale: rand(1.3, 2.3),
-        variant: Math.floor(Math.random()*3)
+        side: side, offset: rand(0.6, 2.2), depth: rand(0.02, 0.98),
+        type: Math.random() < 0.6 ? 'tree' : 'bush', scale: rand(1.3, 2.3), variant: Math.floor(Math.random()*3)
       });
     }
     sceneryObjects.sort((a,b) => a.depth - b.depth);
@@ -825,11 +710,10 @@
 
   function makeGateSide(){
     const isMega = Math.random() < 0.22;
-    const isGood = Math.random() < 0.62; 
+    const isGood = Math.random() < 0.62;
     let value = isGood ? (isMega ? rand(1.2, 1.8) : rand(0.4, 0.8)) : (isMega ? -rand(0.5, 0.9) : -rand(0.15, 0.35));
     return { value: Math.round(value*10)/10, isGood, isMega };
   }
-  
   function spawnGate(){ gates.push({ depth:0.0, left: makeGateSide(), right: makeGateSide(), resolved:false }); }
 
   function applyGateResult(side){
@@ -922,12 +806,10 @@
     const g = ctx.createLinearGradient(0,0,0,horizonY());
     g.addColorStop(0, '#0066FF'); g.addColorStop(1, '#88DDFF');
     ctx.fillStyle = g; ctx.fillRect(0,0,W(),horizonY());
-    
     const sx = W()*0.84, sy = horizonY()*0.28;
     const sg = ctx.createRadialGradient(sx,sy,5, sx,sy,80);
     sg.addColorStop(0,'#FFFFFF'); sg.addColorStop(0.5,'#FFFF33'); sg.addColorStop(1,'rgba(255,255,51,0)');
     ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx,sy,80,0,7); ctx.fill();
-
     ctx.fillStyle = 'rgba(255,255,255,0.95)';
     for(const c of clouds){
       const s = c.s;
@@ -940,42 +822,22 @@
   }
 
   function drawTree(x, y, scale){
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
-    ctx.fillStyle = '#5A3825';
-    ctx.fillRect(-6, -42, 12, 42);
+    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+    ctx.fillStyle = '#5A3825'; ctx.fillRect(-6, -42, 12, 42);
     ctx.fillStyle = '#1B8A3A';
-    ctx.beginPath();
-    ctx.arc(0, -56, 30, 0, Math.PI*2);
-    ctx.arc(-18, -40, 20, 0, Math.PI*2);
-    ctx.arc(18, -40, 20, 0, Math.PI*2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -56, 30, 0, Math.PI*2); ctx.arc(-18, -40, 20, 0, Math.PI*2); ctx.arc(18, -40, 20, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = '#2ECC71';
-    ctx.beginPath();
-    ctx.arc(-5, -62, 18, 0, Math.PI*2);
-    ctx.arc(8, -52, 14, 0, Math.PI*2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(-5, -62, 18, 0, Math.PI*2); ctx.arc(8, -52, 14, 0, Math.PI*2); ctx.fill();
     ctx.restore();
   }
-
   function drawBush(x, y, scale){
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
+    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
     ctx.fillStyle = '#177330';
-    ctx.beginPath();
-    ctx.arc(0, -18, 22, 0, Math.PI*2);
-    ctx.arc(-15, -13, 16, 0, Math.PI*2);
-    ctx.arc(15, -13, 16, 0, Math.PI*2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -18, 22, 0, Math.PI*2); ctx.arc(-15, -13, 16, 0, Math.PI*2); ctx.arc(15, -13, 16, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = '#27AE60';
-    ctx.beginPath();
-    ctx.arc(-4, -22, 13, 0, Math.PI*2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(-4, -22, 13, 0, Math.PI*2); ctx.fill();
     ctx.restore();
   }
-
   function drawScenery(){
     for(const sc of sceneryObjects){
       const y = roadYAt(sc.depth);
@@ -993,9 +855,7 @@
     const gg = ctx.createLinearGradient(0,horizonY(),0,H());
     gg.addColorStop(0,'#2BE66C'); gg.addColorStop(1,'#128537');
     ctx.fillStyle = gg; ctx.fillRect(0,horizonY(),W(),H()-horizonY());
-
     drawScenery();
-
     const topW = roadWidthAt(0), botW = roadWidthAt(1);
     const topL = W()/2 - topW/2, topR = W()/2 + topW/2;
     const botL = W()/2 - botW/2, botR = W()/2 + botW/2;
@@ -1003,13 +863,10 @@
     rg.addColorStop(0,'#2D2D3D'); rg.addColorStop(1,'#14141C');
     ctx.fillStyle = rg;
     ctx.beginPath(); ctx.moveTo(topL,horizonY()); ctx.lineTo(topR,horizonY()); ctx.lineTo(botR,H()); ctx.lineTo(botL,H()); ctx.closePath(); ctx.fill();
-
-    ctx.strokeStyle = '#00FFDD'; ctx.lineWidth = 3.5;
-    ctx.shadowColor = '#00FFDD'; ctx.shadowBlur = 10;
+    ctx.strokeStyle = '#00FFDD'; ctx.lineWidth = 3.5; ctx.shadowColor = '#00FFDD'; ctx.shadowBlur = 10;
     ctx.beginPath(); ctx.moveTo(topL,horizonY()); ctx.lineTo(botL,H()); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(topR,horizonY()); ctx.lineTo(botR,H()); ctx.stroke();
     ctx.shadowBlur = 0;
-
     ctx.strokeStyle = '#FFFFFF';
     const dashOffset = (elapsed*300) % 40;
     const steps = 26;
@@ -1041,36 +898,25 @@
     const roadW = roadWidthAt(depth);
     const laneW = roadW/2 - 6;
     const cx = laneCenterX(depth, laneFrac);
-    
     const portalW = laneW * 0.44;
     const portalH = portalW * 1.25;
     const fadeAlpha = clamp(depth * 4, 0, 1);
     const alpha = (resolved ? clamp(1-(depth-PLAYER_DEPTH)*4,0,1) : 1) * fadeAlpha;
-    
     const baseColor = side.isGood ? (side.isMega?'#00FF55':'#00FF7F') : (side.isMega?'#FF0033':'#FF3355');
     const glowColor = side.isGood ? 'rgba(150,255,200,1)' : 'rgba(255,180,180,1)';
-
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(cx, y - portalH/2);
-    
     ctx.shadowColor = baseColor;
     ctx.shadowBlur = side.isMega ? 25 : 12;
-
     const rx = portalW/2, ry = portalH/2;
     roundRect(ctx, -rx, -ry, portalW, portalH, rx*0.85);
     const grad = ctx.createRadialGradient(0,-ry*0.2,2, 0,0, Math.max(rx,ry));
-    grad.addColorStop(0, '#FFFFFF');
-    grad.addColorStop(0.5, baseColor);
-    grad.addColorStop(1, baseColor);
-    ctx.fillStyle = grad;
-    ctx.fill();
-    
+    grad.addColorStop(0, '#FFFFFF'); grad.addColorStop(0.5, baseColor); grad.addColorStop(1, baseColor);
+    ctx.fillStyle = grad; ctx.fill();
     ctx.shadowBlur = 0;
     ctx.lineWidth = clamp(portalW*0.12, 3, 8);
-    ctx.strokeStyle = '#0D1226';
-    ctx.stroke();
-
+    ctx.strokeStyle = '#0D1226'; ctx.stroke();
     const fs = clamp(portalW*0.42, 9, 32);
     ctx.fillStyle = '#FFFFFF';
     ctx.font = `800 ${fs}px 'Baloo 2', sans-serif`;
@@ -1118,12 +964,10 @@
     const bobY = Math.sin(player.bob)*4.5*scale;
     const fontSize = 96*scale;
     const y = groundY - fontSize*0.42 + bobY;
-
     ctx.save();
     ctx.globalAlpha = 0.35; ctx.fillStyle = '#000';
     ctx.beginPath(); ctx.ellipse(x, groundY+3, fontSize*0.44, 10, 0,0,7); ctx.fill();
     ctx.restore();
-
     const colorDef = getColorDef(stats.equippedColor);
     ctx.save();
     ctx.font = `800 ${fontSize}px 'Baloo 2', sans-serif`;
@@ -1198,45 +1042,27 @@
     document.getElementById('result').style.display = id==='result' ? 'flex' : 'none';
   }
 
-  function startGame(){
-    initAudioCtx();
-    sfxClick();
-    resetGame();
-    state = 'playing';
-    showScreen('playing');
-  }
-
-  function returnToLobby(){
-    sfxClick();
-    state = 'lobby';
-    showScreen('lobby');
-    renderLobbyStats();
-  }
+  function startGame(){ initAudioCtx(); sfxClick(); resetGame(); state = 'playing'; showScreen('playing'); }
+  function returnToLobby(){ sfxClick(); state = 'lobby'; showScreen('lobby'); renderLobbyStats(); }
 
   function endGame(kind){
     if(resultShown) return;
     resultShown = true;
     state = 'result';
-
     let trophyWon = kind==='win';
     const mult = 1.0 + stats.rebirths * 0.1;
     const earnedCoins = Math.round(player.height * 100 * mult);
     const earnedScore = Math.round(player.height * 100);
-
     stats.coins += earnedCoins;
     stats.score += earnedScore;
     stats.games += 1;
-
     if(player.height > stats.bestHeight) stats.bestHeight = player.height;
     if(trophyWon){ stats.trophies += 1; sfxWin(); } else { sfxBad(); }
-    
     saveUserData();
-
     const emoji = document.getElementById('resEmoji');
     const title = document.getElementById('resTitle');
     const sub = document.getElementById('resSub');
     const resStats = document.getElementById('resStats');
-
     if(kind==='win'){
       emoji.textContent = '🏆'; title.textContent = 'Pokal geholt!';
       sub.textContent = `Du hast die Ziellinie bei ${player.height.toFixed(1)} ft überquert! (+1 🏆)`;
@@ -1248,14 +1074,12 @@
       emoji.textContent = '🏁'; title.textContent = 'Ziellinie erreicht';
       sub.textContent = `Du warst bei ${player.height.toFixed(1)} ft — knapp am Pokal vorbei.`;
     }
-
     resStats.innerHTML = `
       <div class="stat-card"><div class="val">${player.height.toFixed(1)}</div><div class="lbl">Ft erreicht</div></div>
       <div class="stat-card"><div class="val">+${earnedScore}</div><div class="lbl">Score</div></div>
       <div class="stat-card"><div class="val">+${earnedCoins}</div><div class="lbl">Münzen</div></div>
       <div class="stat-card"><div class="val">${trophyWon?'+1 🏆':'0'}</div><div class="lbl">Pokale</div></div>
     `;
-
     showScreen('result');
     renderLobbyStats();
   }
@@ -1265,7 +1089,6 @@
   document.getElementById('lobbyBtn').addEventListener('click', returnToLobby);
   document.getElementById('exitBtn').addEventListener('click', returnToLobby);
 
-  /* INIT */
   initClouds();
   initScenery();
   showScreen('lobby');
