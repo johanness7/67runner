@@ -50,6 +50,24 @@
   .lobby-rebirth-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #A30075; }
   .lobby-rebirth-btn:disabled{ background:#ccc; color:#666; box-shadow:none; cursor:not-allowed; }
   .howto{ font-size:clamp(10px, 2.8vw, 11px); color:var(--cream); text-shadow:0 1px 3px rgba(0,0,0,0.6); font-weight:800; text-align:center; max-width:300px; }
+  
+  /* Einstellungs-Icon (FAB) */
+  .settings-fab{
+    position:absolute; top:max(14px, env(safe-area-inset-top)); right:14px; z-index:25;
+    width:46px; height:46px; border-radius:50%; border:3.5px solid var(--ink);
+    background:linear-gradient(135deg,#5A5A6E,#2A2A38); color:#fff; font-size:22px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    box-shadow:0 5px 0 rgba(0,0,0,0.35); transition:transform 0.06s ease;
+  }
+  .settings-fab:active{ transform:translateY(4px) rotate(20deg); box-shadow:0 1px 0 rgba(0,0,0,0.35); }
+  
+  .settings-section{ margin-bottom:16px; padding-bottom:16px; border-bottom:2px dashed #E5E5EA; }
+  .settings-section:last-child{ border-bottom:none; margin-bottom:0; padding-bottom:0; }
+  .settings-label{ font-weight:900; font-size:13px; color:var(--ink); margin-bottom:8px; display:block; }
+  .danger-btn{ background:var(--bad); color:#fff; }
+  .danger-zone{ background:#FFF0F0; border:3px solid var(--bad); border-radius:16px; padding:12px; margin-top:10px; }
+  .danger-zone p{ margin:0 0 10px; font-size:12px; font-weight:800; color:#8B0000; }
+
   #hud{ position:absolute; inset:0; pointer-events:none; z-index:10; display:none; font-family:var(--font-body); }
   .hud-top{ position:absolute; top:max(12px, env(safe-area-inset-top)); left:12px; right:12px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
   .pill{ background:rgba(13,18,38,0.9); color:var(--cream); border-radius:16px; padding:8px 12px; font-weight:900; font-size:13px; display:flex; align-items:center; gap:6px; box-shadow:0 4px 0 rgba(0,0,0,0.3); border:2px solid rgba(255,255,255,0.1); }
@@ -117,6 +135,9 @@
 <body>
 
 <canvas id="gameCanvas"></canvas>
+
+<!-- Einstellungs-Icon in der Lobby -->
+<div class="settings-fab" id="settingsOpenFab" title="Einstellungen">⚙️</div>
 
 <div id="lobby">
   <div class="sun"></div>
@@ -211,6 +232,18 @@
   </div>
 </div>
 
+<!-- Neues Einstellungs-Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2 class="modal-title">⚙️ Einstellungen & Account</h2>
+      <button class="btn btn-secondary" style="padding:6px 12px; font-size:13px;" id="settingsCloseBtn">X</button>
+    </div>
+    <div id="settingsContent"></div>
+    <button class="btn btn-secondary" style="width:100%; margin-top:14px;" id="settingsCloseBtn2">Schließen</button>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -238,7 +271,7 @@
       console.error('Firebase Init Fehler:', e);
     }
   } else {
-    console.warn('[67 RUN] firebaseConfig enthält noch Platzhalterwerte ("HIER_..."). Bitte durch echte Werte aus der Firebase Console ersetzen.');
+    console.warn('[67 RUN] firebaseConfig enthält noch Platzhalterwerte.');
   }
 
   /* ============ AUDIO API ============ */
@@ -341,7 +374,7 @@
     if(currentUser){
       sub.innerHTML = `Eingeloggt als <span style="color:#008844;">${currentUser}</span> 👤 · Wachse bis zur Ziellinie 🏁`;
     } else {
-      sub.innerHTML = `Nicht angemeldet ⚠️ · <span style="color:#A30000; cursor:pointer;" onclick="document.getElementById('accountOpenBtn').click()">Hier anmelden</span>`;
+      sub.innerHTML = `Nicht angemeldet ⚠️ · <span style="color:#A30000; cursor:pointer;" onclick="document.getElementById('settingsOpenFab').click()">Hier anmelden</span>`;
     }
     const nextRebirthCost = (stats.rebirths + 1) * 5;
     el.innerHTML = `
@@ -434,27 +467,14 @@
   /* ============ ONLINE LEADERBOARD UI ============ */
   function renderLeaderboard(){
     const content = document.getElementById('lbContent');
-
     if(!firebaseReady){
-      content.innerHTML = `
-        <div class="lb-unauth-box">
-          <p>⚠️ Firebase ist noch nicht eingerichtet.</p>
-          <p style="margin-top:6px; font-size:11px; font-weight:700;">
-            ${CONFIG_IS_PLACEHOLDER
-              ? 'Die <code>firebaseConfig</code> im HTML-Code enthält noch Platzhalterwerte ("HIER_..."). Ersetze sie durch die echten Werte aus deiner Firebase-Konsole (Projekteinstellungen → Allgemein → "Meine Apps" → Web-App-Konfiguration).'
-              : 'Die Firebase-Initialisierung ist fehlgeschlagen. Öffne die Browser-Konsole (F12) für die genaue Fehlermeldung.'}
-          </p>
-        </div>`;
+      content.innerHTML = `<div class="lb-unauth-box"><p>⚠️ Firebase ist noch nicht eingerichtet.</p></div>`;
       return;
     }
-
     content.innerHTML = `<p style="text-align:center; font-weight:900; color:#6A6A7A;">Lade Online-Bestenliste...</p>`;
     if(currentUser) updateFirebaseLeaderboardEntry();
 
-    db.collection("leaderboard67")
-      .orderBy("score", "desc")
-      .limit(20)
-      .get()
+    db.collection("leaderboard67").orderBy("score", "desc").limit(20).get()
       .then((querySnapshot) => {
         if(querySnapshot.empty){
           content.innerHTML = `<p style="text-align:center; font-weight:900; color:#6A6A7A;">Noch keine Online-Einträge vorhanden.</p>`;
@@ -479,61 +499,103 @@
         content.innerHTML = html;
       })
       .catch((error) => {
-        console.error("Fehler beim Laden des Leaderboards:", error.code, error.message);
-        let hint = 'Öffne die Browser-Konsole (F12) für Details.';
-        if(error.code === 'permission-denied'){
-          hint = 'Deine Firestore-Sicherheitsregeln blockieren den Zugriff. Siehe Anleitung zu den Firestore-Rules.';
-        } else if(error.code === 'unavailable' || error.code === 'failed-precondition'){
-          hint = 'Firestore scheint nicht erreichbar/eingerichtet zu sein. Prüfe, ob im Firebase-Projekt eine Firestore-Datenbank angelegt wurde.';
-        } else if(error.code === 'not-found'){
-          hint = 'Projekt/Datenbank wurde nicht gefunden. Prüfe die projectId in firebaseConfig.';
-        }
-        content.innerHTML = `
-          <p style="text-align:center; font-weight:900; color:var(--bad);">Fehler: ${error.code || error.message}</p>
-          <p style="text-align:center; font-size:11px; font-weight:700; color:#6A6A7A;">${hint}</p>
-        `;
+        content.innerHTML = `<p style="text-align:center; font-weight:900; color:var(--bad);">Fehler beim Laden</p>`;
       });
   }
 
-  /* ============ ACCOUNT UI ============ */
-  function renderAccountModal(){
-    const content = document.getElementById('accountContent');
+  /* ============ SETTINGS & ACCOUNT MANAGEMENT UI ============ */
+  function renderSettingsModal(){
+    const content = document.getElementById('settingsContent');
     if(currentUser){
       content.innerHTML = `
-        <div class="auth-info">
-          <h3>Eingeloggt als</h3>
-          <p style="font-size:18px; font-weight:900; color:#006622; margin:6px 0;">${currentUser}</p>
-          <p>Dein Score wird automatisch in der Online-Bestenliste gespeichert.</p>
+        <div class="settings-section">
+          <span class="settings-label">Eingeloggt als</span>
+          <div class="auth-info" style="margin-bottom:0;">
+            <p style="font-size:18px; font-weight:900; color:#006622; margin:0 0 6px;">${currentUser}</p>
+            <p>Dein Punktestand wird sicher synchronisiert.</p>
+          </div>
         </div>
-        <button class="btn btn-secondary" style="background:#FF3355; color:#fff; width:100%;" id="logoutBtn">Abmelden</button>
+
+        <div class="settings-section">
+          <span class="settings-label">Passwort ändern</span>
+          <div class="auth-form" style="margin-bottom:0;">
+            <input type="password" id="setOldPass" class="auth-input" placeholder="Altes Passwort">
+            <input type="password" id="setNewPass" class="auth-input" placeholder="Neues Passwort">
+            <p class="auth-error" id="setPasswordError"></p>
+            <button class="btn btn-secondary" style="background:var(--sky-accent); color:#fff;" id="changePassBtn">Passwort aktualisieren</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <span class="settings-label">Aktionen</span>
+          <button class="btn btn-secondary" style="background:#FF8800; color:#fff; width:100%; margin-bottom:10px;" id="settingsLogoutBtn">Abmelden</button>
+          <div class="danger-zone">
+            <p>⚠️ Gefahrenzone: Account permanent löschen inklusive aller Münzen, Bestwerte und des Fortschritts.</p>
+            <button class="btn danger-btn" style="width:100%; font-size:14px;" id="deleteAccountBtn">Account unwiderruflich löschen</button>
+          </div>
+        </div>
       `;
-      document.getElementById('logoutBtn').addEventListener('click', ()=>{
+
+      document.getElementById('changePassBtn').addEventListener('click', ()=>{
+        sfxClick();
+        const oldP = document.getElementById('setOldPass').value;
+        const newP = document.getElementById('setNewPass').value;
+        const err = document.getElementById('setPasswordError');
+        const savedPass = localStorage.getItem('userPass67_' + currentUser);
+        if(!oldP || !newP){ err.textContent = 'Bitte alle Felder ausfüllen!'; return; }
+        if(savedPass !== oldP){ err.textContent = 'Altes Passwort ist falsch!'; return; }
+        if(newP.length < 4){ err.textContent = 'Neues Passwort muss min. 4 Zeichen lang sein!'; return; }
+        localStorage.setItem('userPass67_' + currentUser, newP);
+        err.style.color = 'var(--good)';
+        err.textContent = 'Passwort erfolgreich geändert!';
+        setTimeout(()=>{ err.textContent = ''; err.style.color = 'var(--bad)'; }, 2500);
+      });
+
+      document.getElementById('settingsLogoutBtn').addEventListener('click', ()=>{
         sfxClick();
         localStorage.removeItem('activeUser67');
         currentUser = null;
         stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
         renderLobbyStats();
-        renderAccountModal();
+        renderSettingsModal();
       });
+
+      document.getElementById('deleteAccountBtn').addEventListener('click', ()=>{
+        if(confirm(`Möchtest du deinen Account "${currentUser}" wirklich unwiderruflich löschen?`)){
+          sfxClick();
+          localStorage.removeItem('userPass67_' + currentUser);
+          localStorage.removeItem('userSave67_' + currentUser);
+          localStorage.removeItem('activeUser67');
+          currentUser = null;
+          stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
+          renderLobbyStats();
+          document.getElementById('settingsModal').style.display = 'none';
+        }
+      });
+
     } else {
       content.innerHTML = `
-        <div class="auth-form">
-          <input type="text" id="authUsername" class="auth-input" placeholder="Benutzername" maxlength="16">
-          <input type="password" id="authPassword" class="auth-input" placeholder="Passwort">
-          <p class="auth-error" id="authError"></p>
-          <button class="btn btn-primary" style="width:100%;" id="loginBtn">Anmelden</button>
-          <button class="btn btn-secondary" style="width:100%; background:#00FF7F;" id="registerBtn">Neuen Account erstellen</button>
+        <div class="settings-section">
+          <span class="settings-label">Anmelden / Registrieren</span>
+          <div class="auth-form" style="margin-bottom:0;">
+            <input type="text" id="settingsUsername" class="auth-input" placeholder="Benutzername" maxlength="16">
+            <input type="password" id="settingsPassword" class="auth-input" placeholder="Passwort">
+            <p class="auth-error" id="settingsAuthError"></p>
+            <button class="btn btn-primary" style="width:100%;" id="settingsLoginBtn">Anmelden</button>
+            <button class="btn btn-secondary" style="width:100%; background:#00FF7F;" id="settingsRegisterBtn">Neuen Account erstellen</button>
+          </div>
         </div>
       `;
-      document.getElementById('loginBtn').addEventListener('click', ()=>{
+
+      document.getElementById('settingsLoginBtn').addEventListener('click', ()=>{
         sfxClick();
-        const u = document.getElementById('authUsername').value.trim();
-        const p = document.getElementById('authPassword').value;
-        const err = document.getElementById('authError');
+        const u = document.getElementById('settingsUsername').value.trim();
+        const p = document.getElementById('settingsPassword').value;
+        const err = document.getElementById('settingsAuthError');
         if(!u || !p){ err.textContent = 'Bitte alle Felder ausfüllen!'; return; }
         try{
           const savedPass = localStorage.getItem('userPass67_' + u);
-          if(savedPass === null){ err.textContent = 'Account existiert nicht! Bitte registrieren.'; return; }
+          if(savedPass === null){ err.textContent = 'Account existiert nicht!'; return; }
           if(savedPass !== p){ err.textContent = 'Falsches Passwort!'; return; }
           localStorage.setItem('activeUser67', u);
           currentUser = u;
@@ -541,14 +603,15 @@
           if(userSave) stats = {...DEFAULT_STATS, ...JSON.parse(userSave)};
           else stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
           renderLobbyStats();
-          document.getElementById('accountModal').style.display = 'none';
+          document.getElementById('settingsModal').style.display = 'none';
         }catch(e){ err.textContent = 'Fehler beim Anmelden.'; }
       });
-      document.getElementById('registerBtn').addEventListener('click', ()=>{
+
+      document.getElementById('settingsRegisterBtn').addEventListener('click', ()=>{
         sfxClick();
-        const u = document.getElementById('authUsername').value.trim();
-        const p = document.getElementById('authPassword').value;
-        const err = document.getElementById('authError');
+        const u = document.getElementById('settingsUsername').value.trim();
+        const p = document.getElementById('settingsPassword').value;
+        const err = document.getElementById('settingsAuthError');
         if(!u || !p){ err.textContent = 'Bitte alle Felder ausfüllen!'; return; }
         if(u.length < 3){ err.textContent = 'Name muss min. 3 Zeichen lang sein!'; return; }
         try{
@@ -560,23 +623,28 @@
           stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
           saveUserData();
           renderLobbyStats();
-          document.getElementById('accountModal').style.display = 'none';
+          document.getElementById('settingsModal').style.display = 'none';
         }catch(e){ err.textContent = 'Fehler bei Registrierung.'; }
       });
     }
   }
 
+  // Event Listener für Buttons & Modals
   document.getElementById('shopOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderShop(); document.getElementById('shopModal').style.display = 'flex'; });
   document.getElementById('shopCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('shopModal').style.display = 'none'; });
   document.getElementById('shopModal').addEventListener('click', (e)=>{ if(e.target.id === 'shopModal') document.getElementById('shopModal').style.display = 'none'; });
+  
   document.getElementById('lbOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderLeaderboard(); document.getElementById('lbModal').style.display = 'flex'; });
   document.getElementById('lbCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('lbModal').style.display = 'none'; });
   document.getElementById('lbCloseBtn2').addEventListener('click', ()=>{ sfxClick(); document.getElementById('lbModal').style.display = 'none'; });
   document.getElementById('lbModal').addEventListener('click', (e)=>{ if(e.target.id === 'lbModal') document.getElementById('lbModal').style.display = 'none'; });
-  document.getElementById('accountOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderAccountModal(); document.getElementById('accountModal').style.display = 'flex'; });
-  document.getElementById('accountCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('accountModal').style.display = 'none'; });
-  document.getElementById('accountCloseBtn2').addEventListener('click', ()=>{ sfxClick(); document.getElementById('accountModal').style.display = 'none'; });
-  document.getElementById('accountModal').addEventListener('click', (e)=>{ if(e.target.id === 'accountModal') document.getElementById('accountModal').style.display = 'none'; });
+
+  // Account Button in Lobby öffnet ebenfalls die Einstellungen
+  document.getElementById('accountOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderSettingsModal(); document.getElementById('settingsModal').style.display = 'flex'; });
+  document.getElementById('settingsOpenFab').addEventListener('click', ()=>{ sfxClick(); renderSettingsModal(); document.getElementById('settingsModal').style.display = 'flex'; });
+  document.getElementById('settingsCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('settingsModal').style.display = 'none'; });
+  document.getElementById('settingsCloseBtn2').addEventListener('click', ()=>{ sfxClick(); document.getElementById('settingsModal').style.display = 'none'; });
+  document.getElementById('settingsModal').addEventListener('click', (e)=>{ if(e.target.id === 'settingsModal') document.getElementById('settingsModal').style.display = 'none'; });
 
   /* ============ GAME CONSTANTS & LOGIC ============ */
   const START_HEIGHT = 1.0;
@@ -664,18 +732,24 @@
 
   function initClouds(){
     clouds = [];
-    for(let i=0;i<6;i++){
-      clouds.push({ x:Math.random()*W(), y: rand(15, horizonY()*0.65), s: rand(0.6,1.4), speed: rand(8,16) });
+    for(let i=0; i<8; i++){
+      clouds.push({ x:Math.random()*W(), y: rand(10, horizonY()*0.7), s: rand(0.5,1.6), speed: rand(6,18) });
     }
   }
 
   function initScenery(){
     sceneryObjects = [];
-    for(let i=0; i<14; i++){
+    for(let i=0; i<20; i++){
       const side = Math.random() < 0.5 ? -1 : 1;
+      const typeRand = Math.random();
+      let type = 'tree-pine';
+      if(typeRand < 0.35) type = 'tree-oak';
+      else if(typeRand < 0.7) type = 'tree-pine';
+      else type = 'bush';
+
       sceneryObjects.push({
-        side: side, offset: rand(0.6, 2.2), depth: rand(0.02, 0.98),
-        type: Math.random() < 0.6 ? 'tree' : 'bush', scale: rand(1.3, 2.3), variant: Math.floor(Math.random()*3)
+        side: side, offset: rand(0.65, 2.8), depth: rand(0.01, 0.99),
+        type: type, scale: rand(1.0, 2.4)
       });
     }
     sceneryObjects.sort((a,b) => a.depth - b.depth);
@@ -766,9 +840,9 @@
     for(const sc of sceneryObjects){
       sc.depth += speed * dt * 0.85;
       if(sc.depth > 1.25){
-        sc.depth = 0.02;
+        sc.depth = 0.01;
         sc.side = Math.random() < 0.5 ? -1 : 1;
-        sc.offset = rand(0.6, 2.2);
+        sc.offset = rand(0.65, 2.8);
       }
     }
     sceneryObjects.sort((a,b) => a.depth - b.depth);
@@ -784,7 +858,7 @@
       }
     }
 
-    for(const c of clouds){ c.x += c.speed*dt; if(c.x > W()+90) c.x = -90; }
+    for(const c of clouds){ c.x += c.speed*dt; if(c.x > W()+100) c.x = -100; }
 
     particles = particles.filter(p => p.life > 0);
     for(const p of particles){
@@ -802,80 +876,114 @@
     }
   }
 
+  /* ============ VERBESSERTE DETAILS & GRAFIK ============ */
   function drawSky(){
     const g = ctx.createLinearGradient(0,0,0,horizonY());
-    g.addColorStop(0, '#0066FF'); g.addColorStop(1, '#88DDFF');
+    g.addColorStop(0, '#0044CC'); g.addColorStop(0.5, '#2288FF'); g.addColorStop(1, '#9BE2FF');
     ctx.fillStyle = g; ctx.fillRect(0,0,W(),horizonY());
-    const sx = W()*0.84, sy = horizonY()*0.28;
-    const sg = ctx.createRadialGradient(sx,sy,5, sx,sy,80);
-    sg.addColorStop(0,'#FFFFFF'); sg.addColorStop(0.5,'#FFFF33'); sg.addColorStop(1,'rgba(255,255,51,0)');
-    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx,sy,80,0,7); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    
+    // Sonne mit ausgefeiltem Glow
+    const sx = W()*0.82, sy = horizonY()*0.32;
+    const sg = ctx.createRadialGradient(sx,sy,5, sx,sy,90);
+    sg.addColorStop(0,'#FFFFFF'); sg.addColorStop(0.4,'#FFFF44'); sg.addColorStop(1,'rgba(255,240,0,0)');
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx,sy,90,0,7); ctx.fill();
+
+    // Detailliertere Wolken
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
     for(const c of clouds){
       const s = c.s;
       ctx.beginPath();
-      ctx.ellipse(c.x, c.y, 36*s, 15*s, 0,0,7);
-      ctx.ellipse(c.x+28*s, c.y+4*s, 24*s, 13*s,0,0,7);
-      ctx.ellipse(c.x-26*s, c.y+5*s, 22*s, 12*s,0,0,7);
+      ctx.ellipse(c.x, c.y, 42*s, 16*s, 0,0,7);
+      ctx.ellipse(c.x+32*s, c.y+4*s, 26*s, 14*s,0,0,7);
+      ctx.ellipse(c.x-30*s, c.y+5*s, 24*s, 13*s,0,0,7);
+      ctx.ellipse(c.x+12*s, c.y-7*s, 20*s, 12*s,0,0,7);
       ctx.fill();
     }
   }
 
-  function drawTree(x, y, scale){
+  // Hochdetailierte Landschafts-Objekte
+  function drawDetailedTreeOak(x, y, scale){
     ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
-    ctx.fillStyle = '#5A3825'; ctx.fillRect(-6, -42, 12, 42);
-    ctx.fillStyle = '#1B8A3A';
-    ctx.beginPath(); ctx.arc(0, -56, 30, 0, Math.PI*2); ctx.arc(-18, -40, 20, 0, Math.PI*2); ctx.arc(18, -40, 20, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#2ECC71';
-    ctx.beginPath(); ctx.arc(-5, -62, 18, 0, Math.PI*2); ctx.arc(8, -52, 14, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#4A2F1D'; ctx.fillRect(-7, -48, 14, 48);
+    // Schatten-Blätterkrone
+    ctx.fillStyle = '#115E25';
+    ctx.beginPath(); ctx.arc(0, -64, 34, 0, Math.PI*2); ctx.arc(-20, -46, 22, 0, Math.PI*2); ctx.arc(20, -46, 22, 0, Math.PI*2); ctx.fill();
+    // Helle Blätterkrone (Highlight)
+    ctx.fillStyle = '#22B14C';
+    ctx.beginPath(); ctx.arc(-4, -68, 20, 0, Math.PI*2); ctx.arc(10, -58, 16, 0, Math.PI*2); ctx.fill();
     ctx.restore();
   }
-  function drawBush(x, y, scale){
+
+  function drawDetailedTreePine(x, y, scale){
     ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
-    ctx.fillStyle = '#177330';
-    ctx.beginPath(); ctx.arc(0, -18, 22, 0, Math.PI*2); ctx.arc(-15, -13, 16, 0, Math.PI*2); ctx.arc(15, -13, 16, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#3D2516'; ctx.fillRect(-5, -38, 10, 38);
+    ctx.fillStyle = '#145A32';
+    ctx.beginPath(); ctx.moveTo(0, -78); ctx.lineTo(-26, -42); ctx.lineTo(26, -42); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#1E8449';
+    ctx.beginPath(); ctx.moveTo(0, -62); ctx.lineTo(-20, -30); ctx.lineTo(20, -30); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#27AE60';
-    ctx.beginPath(); ctx.arc(-4, -22, 13, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0, -46); ctx.lineTo(-14, -16); ctx.lineTo(14, -16); ctx.closePath(); ctx.fill();
     ctx.restore();
   }
+
+  function drawDetailedBush(x, y, scale){
+    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+    ctx.fillStyle = '#196F3D';
+    ctx.beginPath(); ctx.arc(0, -18, 24, 0, Math.PI*2); ctx.arc(-16, -12, 17, 0, Math.PI*2); ctx.arc(16, -12, 17, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#2ECC71';
+    ctx.beginPath(); ctx.arc(-5, -22, 14, 0, Math.PI*2); ctx.arc(6, -16, 11, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
   function drawScenery(){
     for(const sc of sceneryObjects){
       const y = roadYAt(sc.depth);
       const roadL = roadLeftAt(sc.depth);
       const roadR = roadL + roadWidthAt(sc.depth);
-      let x = sc.side === -1 ? roadL - sc.offset * roadWidthAt(sc.depth) * 0.7 : roadR + sc.offset * roadWidthAt(sc.depth) * 0.7;
-      if(x < -100 || x > W() + 100 || y < horizonY() - 30) continue;
-      const perspectiveScale = lerp(0.3, 2.2, sc.depth) * sc.scale;
-      if(sc.type === 'tree') drawTree(x, y, perspectiveScale);
-      else drawBush(x, y, perspectiveScale);
+      let x = sc.side === -1 ? roadL - sc.offset * roadWidthAt(sc.depth) * 0.75 : roadR + sc.offset * roadWidthAt(sc.depth) * 0.75;
+      if(x < -120 || x > W() + 120 || y < horizonY() - 40) continue;
+      const perspectiveScale = lerp(0.25, 2.4, sc.depth) * sc.scale;
+      
+      if(sc.type === 'tree-oak') drawDetailedTreeOak(x, y, perspectiveScale);
+      else if(sc.type === 'tree-pine') drawDetailedTreePine(x, y, perspectiveScale);
+      else drawDetailedBush(x, y, perspectiveScale);
     }
   }
 
   function drawGround(){
+    // Schönerer, detailreicherer Rasen-Farbverlauf
     const gg = ctx.createLinearGradient(0,horizonY(),0,H());
-    gg.addColorStop(0,'#2BE66C'); gg.addColorStop(1,'#128537');
+    gg.addColorStop(0,'#2BE66C'); gg.addColorStop(0.4,'#22C358'); gg.addColorStop(1,'#0E6E2E');
     ctx.fillStyle = gg; ctx.fillRect(0,horizonY(),W(),H()-horizonY());
+    
+    // Landschaftsobjekte im Hintergrund / Vordergrund rendern
     drawScenery();
+
     const topW = roadWidthAt(0), botW = roadWidthAt(1);
     const topL = W()/2 - topW/2, topR = W()/2 + topW/2;
     const botL = W()/2 - botW/2, botR = W()/2 + botW/2;
+    
+    // Straße mit edlerem Cyber-Design
     const rg = ctx.createLinearGradient(0,horizonY(),0,H());
-    rg.addColorStop(0,'#2D2D3D'); rg.addColorStop(1,'#14141C');
+    rg.addColorStop(0,'#252535'); rg.addColorStop(1,'#0F0F17');
     ctx.fillStyle = rg;
     ctx.beginPath(); ctx.moveTo(topL,horizonY()); ctx.lineTo(topR,horizonY()); ctx.lineTo(botR,H()); ctx.lineTo(botL,H()); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#00FFDD'; ctx.lineWidth = 3.5; ctx.shadowColor = '#00FFDD'; ctx.shadowBlur = 10;
+    
+    // Straßenseitenränder mit Neonleuchten
+    ctx.strokeStyle = '#00FFFF'; ctx.lineWidth = 4; ctx.shadowColor = '#00FFFF'; ctx.shadowBlur = 12;
     ctx.beginPath(); ctx.moveTo(topL,horizonY()); ctx.lineTo(botL,H()); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(topR,horizonY()); ctx.lineTo(botR,H()); ctx.stroke();
     ctx.shadowBlur = 0;
+    
+    // Gestrichelte Mittellinie
     ctx.strokeStyle = '#FFFFFF';
-    const dashOffset = (elapsed*300) % 40;
-    const steps = 26;
-    ctx.lineWidth = 3.5;
+    const dashOffset = (elapsed*350) % 40;
+    const steps = 28;
     for(let i=0;i<steps;i++){
       const t0 = i/steps, t1 = i/steps + 0.03;
       if(((i*40 - dashOffset) % 80 + 80) % 80 > 40) continue;
       const y0 = roadYAt(t0), y1 = roadYAt(t1);
-      const w0 = lerp(2, 9, t0);
+      const w0 = lerp(2, 10, t0);
       ctx.globalAlpha = clamp(t0*1.1,0.2,1);
       ctx.beginPath(); ctx.moveTo(W()/2,y0); ctx.lineTo(W()/2,y1); ctx.lineWidth = w0; ctx.stroke();
     }
@@ -1027,7 +1135,7 @@
     let dt = (ts-lastTime)/1000; dt = Math.min(dt, 0.05); lastTime = ts;
     if(state==='playing') update(dt);
     else if(state==='result'){
-      for(const c of clouds){ c.x += c.speed*dt; if(c.x>W()+90) c.x=-90; }
+      for(const c of clouds){ c.x += c.speed*dt; if(c.x>W()+100) c.x=-100; }
       particles = particles.filter(p=>p.life>0);
       for(const p of particles){ p.life -= dt; if(p.type==='confetti'){ p.x += p.vx*dt; p.y += p.vy*dt; p.rot += p.vr*dt; } }
     }
@@ -1038,6 +1146,7 @@
 
   function showScreen(id){
     document.getElementById('lobby').style.display = id==='lobby' ? 'flex' : 'none';
+    document.getElementById('settingsOpenFab').style.display = id==='lobby' ? 'flex' : 'none';
     document.getElementById('hud').style.display = id==='playing' ? 'block' : 'none';
     document.getElementById('result').style.display = id==='result' ? 'flex' : 'none';
   }
