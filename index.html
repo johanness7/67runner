@@ -51,7 +51,6 @@
   .lobby-rebirth-btn:disabled{ background:#ccc; color:#666; box-shadow:none; cursor:not-allowed; }
   .howto{ font-size:clamp(10px, 2.8vw, 11px); color:var(--cream); text-shadow:0 1px 3px rgba(0,0,0,0.6); font-weight:800; text-align:center; max-width:300px; }
   
-  /* Einstellungs-Icon (FAB) */
   .settings-fab{
     position:absolute; top:max(14px, env(safe-area-inset-top)); right:14px; z-index:25;
     width:46px; height:46px; border-radius:50%; border:3.5px solid var(--ink);
@@ -136,7 +135,6 @@
 
 <canvas id="gameCanvas"></canvas>
 
-<!-- Einstellungs-Icon in der Lobby -->
 <div class="settings-fab" id="settingsOpenFab" title="Einstellungen">⚙️</div>
 
 <div id="lobby">
@@ -153,7 +151,7 @@
   </div>
   <div class="stats-row" id="lobbyStats"></div>
   <div class="lobby-bottom">
-    <div class="goal-strip">Start bei 1.0 ft · Ziel 6.7 ft · 100x ft Münzen & Score</div>
+    <div class="goal-strip">Start bei 1.0 ft · Ziel 6.7 ft · Rebirth Münz-Boost aktiv</div>
     <div class="btn-row">
       <button class="play-btn" id="playBtn">▶ SPIELEN</button>
       <button class="menu-btn shop-btn-bg" id="shopOpenBtn">🎨 Shop</button>
@@ -202,7 +200,7 @@
     </div>
     <div class="rebirth-banner" id="rebirthBanner">
       <h3 id="rebirthTitle">⚡ Rebirth I</h3>
-      <p id="rebirthDesc">Setzt Münzen & Farben zurück, gibt aber dauerhaft +0.1x Münzen!</p>
+      <p id="rebirthDesc">Setzt Münzen & Farben zurück, erhöht aber den Münz-Boost um +1.0x!</p>
       <button class="rebirth-btn" id="rebirthBtn">Rebirth kaufen (5 🏆)</button>
     </div>
     <div class="swatch-grid" id="shopGrid"></div>
@@ -232,7 +230,6 @@
   </div>
 </div>
 
-<!-- Neues Einstellungs-Modal -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal-card">
     <div class="modal-header">
@@ -248,7 +245,6 @@
 (function(){
   "use strict";
 
-  /* ============ FIREBASE CONFIGURATION ============ */
   const firebaseConfig = {
     apiKey: "AIzaSyASKQXcjPlv2o_sJm6R2129kOMqG9GzugE",
     authDomain: "runner-4f745.firebaseapp.com",
@@ -270,11 +266,8 @@
     }catch(e){
       console.error('Firebase Init Fehler:', e);
     }
-  } else {
-    console.warn('[67 RUN] firebaseConfig enthält noch Platzhalterwerte.');
   }
 
-  /* ============ AUDIO API ============ */
   let audioCtx = null;
   function initAudioCtx(){
     if(!audioCtx){
@@ -305,7 +298,6 @@
   function sfxWin(){ [523.25, 659.25, 783.99, 1046.50].forEach((f,i)=>setTimeout(()=>playTone(f, 0.18, 'triangle', 0.2), i*90)); }
   function sfxRebirth(){ [300, 450, 600, 900].forEach((f,i)=>setTimeout(()=>playTone(f, 0.22, 'sine', 0.22), i*80)); }
 
-  /* ============ COLOR CATALOG ============ */
   const COLORS = [
     { id:'sunset',   name:'Sonnenuntergang', price:0,       stops:['#FFEE33','#FF5500'] },
     { id:'lime',     name:'Neon Limette',    price:3500,    stops:['#CCFF00','#00CC33'] },
@@ -327,7 +319,6 @@
     { id:'rainbow',  name:'RGB Gaming',      price:600000,  stops:['#FF0000','#FFFF00','#00FF00','#00FFFF','#0000FF','#FF00FF'], animated:true }
   ];
 
-  /* ============ PERSISTENT STATS & ACCOUNTS ============ */
   const DEFAULT_STATS = { coins:0, score:0, bestHeight:1.0, trophies:0, games:0, rebirths:0, ownedColors:['sunset'], equippedColor:'sunset' };
   let stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
   let currentUser = null;
@@ -365,16 +356,17 @@
       score: stats.score,
       trophies: stats.trophies,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true }).catch(err => console.error("Firebase Sync Error:", err.code, err.message));
+    }, { merge: true }).catch(err => {});
   }
 
   function renderLobbyStats(){
     const el = document.getElementById('lobbyStats');
     const sub = document.getElementById('lobbySubtitle');
+    const coinMult = stats.rebirths + 1;
     if(currentUser){
-      sub.innerHTML = `Eingeloggt als <span style="color:#008844;">${currentUser}</span> 👤 · Wachse bis zur Ziellinie 🏁`;
+      sub.innerHTML = `Eingeloggt als <span style="color:#008844;">${currentUser}</span> 👤 · Münz-Boost: <span style="color:#FFD700;">${coinMult}x</span>`;
     } else {
-      sub.innerHTML = `Nicht angemeldet ⚠️ · <span style="color:#A30000; cursor:pointer;" onclick="document.getElementById('settingsOpenFab').click()">Hier anmelden</span>`;
+      sub.innerHTML = `Nicht angemeldet ⚠️ · Münz-Boost: <span style="color:#FFD700;">${coinMult}x</span>`;
     }
     const nextRebirthCost = (stats.rebirths + 1) * 5;
     el.innerHTML = `
@@ -382,7 +374,7 @@
       <div class="stat-card"><div class="val">${stats.score}</div><div class="lbl">Score</div></div>
       <div class="stat-card"><div class="val">${stats.coins}</div><div class="lbl">Münzen</div></div>
       <div class="stat-card"><div class="val">${stats.trophies}</div><div class="lbl">Pokale</div></div>
-      <div class="stat-card"><div class="val">${stats.rebirths}</div><div class="lbl">Rebirths</div></div>
+      <div class="stat-card"><div class="val">${coinMult}x</div><div class="lbl">Boost</div></div>
     `;
     const lobbyRBtn = document.getElementById('lobbyRebirthBtn');
     lobbyRBtn.textContent = `⚡ Rebirth (${nextRebirthCost} 🏆)`;
@@ -394,10 +386,10 @@
     document.getElementById('shopScore').textContent = stats.score;
     document.getElementById('shopTrophies').textContent = stats.trophies;
     const nextRebirthCost = (stats.rebirths + 1) * 5;
-    const currentMult = (1.0 + stats.rebirths * 0.1).toFixed(1);
-    const nextMult = (1.0 + (stats.rebirths + 1) * 0.1).toFixed(1);
+    const currentMult = stats.rebirths + 1;
+    const nextMult = stats.rebirths + 2;
     document.getElementById('rebirthTitle').textContent = `⚡ Rebirth ${stats.rebirths+1} (Aktuell: ${currentMult}x Münzen)`;
-    document.getElementById('rebirthDesc').textContent = `Setzt Münzen & Farben zurück, gibt dir aber dauerhaft ${nextMult}x Münzen! (Score bleibt erhalten)`;
+    document.getElementById('rebirthDesc').textContent = `Setzt Münzen & Farben zurück, erhöht aber den permananten Münz-Boost auf ${nextMult}x! (Score bleibt erhalten)`;
     const rBtn = document.getElementById('rebirthBtn');
     rBtn.textContent = `Rebirth kaufen (${nextRebirthCost} 🏆)`;
     rBtn.disabled = stats.trophies < nextRebirthCost;
@@ -464,11 +456,10 @@
   document.getElementById('rebirthBtn').addEventListener('click', performRebirth);
   document.getElementById('lobbyRebirthBtn').addEventListener('click', performRebirth);
 
-  /* ============ ONLINE LEADERBOARD UI ============ */
   function renderLeaderboard(){
     const content = document.getElementById('lbContent');
     if(!firebaseReady){
-      content.innerHTML = `<div class="lb-unauth-box"><p>⚠️ Firebase ist noch nicht eingerichtet.</p></div>`;
+      content.innerHTML = `<div class="lb-unauth-box"><p>⚠️ Firebase ist nicht eingerichtet.</p></div>`;
       return;
     }
     content.innerHTML = `<p style="text-align:center; font-weight:900; color:#6A6A7A;">Lade Online-Bestenliste...</p>`;
@@ -503,7 +494,6 @@
       });
   }
 
-  /* ============ SETTINGS & ACCOUNT MANAGEMENT UI ============ */
   function renderSettingsModal(){
     const content = document.getElementById('settingsContent');
     if(currentUser){
@@ -629,7 +619,6 @@
     }
   }
 
-  // Event Listener für Buttons & Modals
   document.getElementById('shopOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderShop(); document.getElementById('shopModal').style.display = 'flex'; });
   document.getElementById('shopCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('shopModal').style.display = 'none'; });
   document.getElementById('shopModal').addEventListener('click', (e)=>{ if(e.target.id === 'shopModal') document.getElementById('shopModal').style.display = 'none'; });
@@ -639,14 +628,12 @@
   document.getElementById('lbCloseBtn2').addEventListener('click', ()=>{ sfxClick(); document.getElementById('lbModal').style.display = 'none'; });
   document.getElementById('lbModal').addEventListener('click', (e)=>{ if(e.target.id === 'lbModal') document.getElementById('lbModal').style.display = 'none'; });
 
-  // Account Button in Lobby öffnet ebenfalls die Einstellungen
   document.getElementById('accountOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderSettingsModal(); document.getElementById('settingsModal').style.display = 'flex'; });
   document.getElementById('settingsOpenFab').addEventListener('click', ()=>{ sfxClick(); renderSettingsModal(); document.getElementById('settingsModal').style.display = 'flex'; });
   document.getElementById('settingsCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('settingsModal').style.display = 'none'; });
   document.getElementById('settingsCloseBtn2').addEventListener('click', ()=>{ sfxClick(); document.getElementById('settingsModal').style.display = 'none'; });
   document.getElementById('settingsModal').addEventListener('click', (e)=>{ if(e.target.id === 'settingsModal') document.getElementById('settingsModal').style.display = 'none'; });
 
-  /* ============ GAME CONSTANTS & LOGIC ============ */
   const START_HEIGHT = 1.0;
   const GOAL_HEIGHT = 6.7;
   const MIN_HEIGHT = 0.3;
@@ -837,6 +824,7 @@
     }
     gates = gates.filter(g => g.depth < 1.35);
 
+    // FIX: Bäume sliden jetzt absolut gleichmäßig basierend auf dem festen Tempo (speed * dt * 0.85)
     for(const sc of sceneryObjects){
       sc.depth += speed * dt * 0.85;
       if(sc.depth > 1.25){
@@ -876,19 +864,16 @@
     }
   }
 
-  /* ============ VERBESSERTE DETAILS & GRAFIK ============ */
   function drawSky(){
     const g = ctx.createLinearGradient(0,0,0,horizonY());
     g.addColorStop(0, '#0044CC'); g.addColorStop(0.5, '#2288FF'); g.addColorStop(1, '#9BE2FF');
     ctx.fillStyle = g; ctx.fillRect(0,0,W(),horizonY());
     
-    // Sonne mit ausgefeiltem Glow
     const sx = W()*0.82, sy = horizonY()*0.32;
     const sg = ctx.createRadialGradient(sx,sy,5, sx,sy,90);
     sg.addColorStop(0,'#FFFFFF'); sg.addColorStop(0.4,'#FFFF44'); sg.addColorStop(1,'rgba(255,240,0,0)');
     ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx,sy,90,0,7); ctx.fill();
 
-    // Detailliertere Wolken
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
     for(const c of clouds){
       const s = c.s;
@@ -901,14 +886,11 @@
     }
   }
 
-  // Hochdetailierte Landschafts-Objekte
   function drawDetailedTreeOak(x, y, scale){
     ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
     ctx.fillStyle = '#4A2F1D'; ctx.fillRect(-7, -48, 14, 48);
-    // Schatten-Blätterkrone
     ctx.fillStyle = '#115E25';
     ctx.beginPath(); ctx.arc(0, -64, 34, 0, Math.PI*2); ctx.arc(-20, -46, 22, 0, Math.PI*2); ctx.arc(20, -46, 22, 0, Math.PI*2); ctx.fill();
-    // Helle Blätterkrone (Highlight)
     ctx.fillStyle = '#22B14C';
     ctx.beginPath(); ctx.arc(-4, -68, 20, 0, Math.PI*2); ctx.arc(10, -58, 16, 0, Math.PI*2); ctx.fill();
     ctx.restore();
@@ -951,31 +933,26 @@
   }
 
   function drawGround(){
-    // Schönerer, detailreicherer Rasen-Farbverlauf
     const gg = ctx.createLinearGradient(0,horizonY(),0,H());
     gg.addColorStop(0,'#2BE66C'); gg.addColorStop(0.4,'#22C358'); gg.addColorStop(1,'#0E6E2E');
     ctx.fillStyle = gg; ctx.fillRect(0,horizonY(),W(),H()-horizonY());
     
-    // Landschaftsobjekte im Hintergrund / Vordergrund rendern
     drawScenery();
 
     const topW = roadWidthAt(0), botW = roadWidthAt(1);
     const topL = W()/2 - topW/2, topR = W()/2 + topW/2;
     const botL = W()/2 - botW/2, botR = W()/2 + botW/2;
     
-    // Straße mit edlerem Cyber-Design
     const rg = ctx.createLinearGradient(0,horizonY(),0,H());
     rg.addColorStop(0,'#252535'); rg.addColorStop(1,'#0F0F17');
     ctx.fillStyle = rg;
     ctx.beginPath(); ctx.moveTo(topL,horizonY()); ctx.lineTo(topR,horizonY()); ctx.lineTo(botR,H()); ctx.lineTo(botL,H()); ctx.closePath(); ctx.fill();
     
-    // Straßenseitenränder mit Neonleuchten
     ctx.strokeStyle = '#00FFFF'; ctx.lineWidth = 4; ctx.shadowColor = '#00FFFF'; ctx.shadowBlur = 12;
     ctx.beginPath(); ctx.moveTo(topL,horizonY()); ctx.lineTo(botL,H()); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(topR,horizonY()); ctx.lineTo(botR,H()); ctx.stroke();
     ctx.shadowBlur = 0;
     
-    // Gestrichelte Mittellinie
     ctx.strokeStyle = '#FFFFFF';
     const dashOffset = (elapsed*350) % 40;
     const steps = 28;
@@ -1159,9 +1136,12 @@
     resultShown = true;
     state = 'result';
     let trophyWon = kind==='win';
-    const mult = 1.0 + stats.rebirths * 0.1;
-    const earnedCoins = Math.round(player.height * 100 * mult);
+    
+    // FIX: Rebirth-Multiplikator berechnet (0 Rebirths = 1x, 1 Rebirth = 2x, 2 Rebirths = 3x usw.)
+    const coinMult = stats.rebirths + 1;
+    const earnedCoins = Math.round(player.height * 100 * coinMult);
     const earnedScore = Math.round(player.height * 100);
+    
     stats.coins += earnedCoins;
     stats.score += earnedScore;
     stats.games += 1;
@@ -1186,7 +1166,7 @@
     resStats.innerHTML = `
       <div class="stat-card"><div class="val">${player.height.toFixed(1)}</div><div class="lbl">Ft erreicht</div></div>
       <div class="stat-card"><div class="val">+${earnedScore}</div><div class="lbl">Score</div></div>
-      <div class="stat-card"><div class="val">+${earnedCoins}</div><div class="lbl">Münzen</div></div>
+      <div class="stat-card"><div class="val">+${earnedCoins}</div><div class="lbl">Münzen (${coinMult}x)</div></div>
       <div class="stat-card"><div class="val">${trophyWon?'+1 🏆':'0'}</div><div class="lbl">Pokale</div></div>
     `;
     showScreen('result');
