@@ -152,7 +152,7 @@
   .btn-primary{ background:var(--sky-accent); color:#fff; }
   .btn-secondary{ background:var(--cream); color:var(--ink); }
 
-  /* ---------- MODALS (SHOP, LEADERBOARD, ACCOUNT) ---------- */
+  /* ---------- MODALS ---------- */
   .modal-overlay{ position:absolute; inset:0; z-index:40; display:none; align-items:center; justify-content:center; background:rgba(5,8,18,0.75); padding:16px; }
   .modal-card{
     background:var(--cream); border-radius:28px; padding:20px; width:min(96vw,460px); max-height:85vh; overflow-y:auto;
@@ -210,7 +210,7 @@
   }
   .lb-unauth-box p{ margin:0 0 10px; font-size:13px; font-weight:900; color:#856404; }
 
-  /* ACCOUNT / AUTH STYLES */
+  /* ACCOUNT STYLES */
   .auth-form{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
   .auth-input{
     font-family:var(--font-body); font-weight:800; font-size:14px; border:3px solid var(--ink);
@@ -582,7 +582,7 @@
     content.innerHTML = html;
   }
 
-  /* ============ ACCOUNT / AUTH UI ============ */
+  /* ============ ACCOUNT UI ============ */
   function renderAccountModal(){
     const content = document.getElementById('accountContent');
     if(currentUser){
@@ -684,7 +684,7 @@
   document.getElementById('accountModal').addEventListener('click', (e)=>{ if(e.target.id === 'accountModal') document.getElementById('accountModal').style.display = 'none'; });
 
 
-  /* ============ CONSTANTS & GAME LOGIC ============ */
+  /* ============ GAME CONSTANTS & LOGIC ============ */
   const START_HEIGHT = 1.0;
   const GOAL_HEIGHT = 6.7;
   const MIN_HEIGHT = 0.3;
@@ -766,6 +766,7 @@
   let lastTime = null;
   let resultShown = false;
   let clouds = [];
+  let sceneryObjects = [];
 
   function initClouds(){
     clouds = [];
@@ -774,12 +775,30 @@
     }
   }
 
+  function initScenery(){
+    sceneryObjects = [];
+    // Weniger Objekte (14 statt 32), dafür größer und breiter verteilt
+    for(let i=0; i<14; i++){
+      const side = Math.random() < 0.5 ? -1 : 1;
+      sceneryObjects.push({
+        side: side, // -1 = links, 1 = rechts
+        offset: rand(0.6, 2.2), // Weiter weg von der Straße verteilt
+        depth: rand(0.02, 0.98),
+        type: Math.random() < 0.6 ? 'tree' : 'bush',
+        scale: rand(1.3, 2.3), // Deutlich größer!
+        variant: Math.floor(Math.random()*3)
+      });
+    }
+    sceneryObjects.sort((a,b) => a.depth - b.depth);
+  }
+
   function resetGame(){
     player.lane = 0; player.dispLaneFrac = 0; player.height = START_HEIGHT; player.bob = 0;
     gates = []; finishLine = null; particles = [];
     elapsed = 0; spawnTimer = 1.0;
     resultShown = false;
     initClouds();
+    initScenery();
   }
 
   function heightScale(h){ return clamp(0.5 + (h-1.0)*0.14, 0.4, 1.7); }
@@ -856,6 +875,16 @@
     }
     gates = gates.filter(g => g.depth < 1.35);
 
+    for(const sc of sceneryObjects){
+      sc.depth += speed * dt * 0.85;
+      if(sc.depth > 1.25){
+        sc.depth = 0.02;
+        sc.side = Math.random() < 0.5 ? -1 : 1;
+        sc.offset = rand(0.6, 2.2);
+      }
+    }
+    sceneryObjects.sort((a,b) => a.depth - b.depth);
+
     if(!finishLine && elapsed >= TIME_LIMIT - FINISH_LEAD){
       finishLine = { depth:0.0, resolved:false };
     }
@@ -906,10 +935,84 @@
     }
   }
 
+  function drawTree(x, y, scale){
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    
+    // Stamm
+    ctx.fillStyle = '#5A3825';
+    ctx.fillRect(-6, -42, 12, 42);
+    
+    // Krone (größer und voluminöser)
+    ctx.fillStyle = '#1B8A3A';
+    ctx.beginPath();
+    ctx.arc(0, -56, 30, 0, Math.PI*2);
+    ctx.arc(-18, -40, 20, 0, Math.PI*2);
+    ctx.arc(18, -40, 20, 0, Math.PI*2);
+    ctx.fill();
+
+    // Hellerer Akzent auf der Krone
+    ctx.fillStyle = '#2ECC71';
+    ctx.beginPath();
+    ctx.arc(-5, -62, 18, 0, Math.PI*2);
+    ctx.arc(8, -52, 14, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawBush(x, y, scale){
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+
+    ctx.fillStyle = '#177330';
+    ctx.beginPath();
+    ctx.arc(0, -18, 22, 0, Math.PI*2);
+    ctx.arc(-15, -13, 16, 0, Math.PI*2);
+    ctx.arc(15, -13, 16, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = '#27AE60';
+    ctx.beginPath();
+    ctx.arc(-4, -22, 13, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawScenery(){
+    for(const sc of sceneryObjects){
+      const y = roadYAt(sc.depth);
+      const roadL = roadLeftAt(sc.depth);
+      const roadR = roadL + roadWidthAt(sc.depth);
+      
+      let x;
+      if(sc.side === -1){
+        x = roadL - sc.offset * roadWidthAt(sc.depth) * 0.7;
+      } else {
+        x = roadR + sc.offset * roadWidthAt(sc.depth) * 0.7;
+      }
+
+      if(x < -100 || x > W() + 100 || y < horizonY() - 30) continue;
+
+      const perspectiveScale = lerp(0.3, 2.2, sc.depth) * sc.scale;
+
+      if(sc.type === 'tree'){
+        drawTree(x, y, perspectiveScale);
+      } else {
+        drawBush(x, y, perspectiveScale);
+      }
+    }
+  }
+
   function drawGround(){
     const gg = ctx.createLinearGradient(0,horizonY(),0,H());
     gg.addColorStop(0,'#2BE66C'); gg.addColorStop(1,'#128537');
     ctx.fillStyle = gg; ctx.fillRect(0,horizonY(),W(),H()-horizonY());
+
+    drawScenery();
 
     const topW = roadWidthAt(0), botW = roadWidthAt(1);
     const topL = W()/2 - topW/2, topR = W()/2 + topW/2;
@@ -925,7 +1028,8 @@
     ctx.beginPath(); ctx.moveTo(topR,horizonY()); ctx.lineTo(botR,H()); ctx.stroke();
     ctx.shadowBlur = 0;
 
-    ctx.strokeStyle = '#FFFF55';
+    // Straßenlinien in WEISS
+    ctx.strokeStyle = '#FFFFFF';
     const dashOffset = (elapsed*300) % 40;
     const steps = 26;
     ctx.lineWidth = 3.5;
@@ -1182,6 +1286,7 @@
 
   /* INIT */
   initClouds();
+  initScenery();
   showScreen('lobby');
   loadUserData();
 
