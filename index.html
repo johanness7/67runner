@@ -1,1192 +1,322 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>67 RUN</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --sky-top:#2298FF;
-    --sky-bottom:#9BE2FF;
-    --sun:#FFF066;
-    --grass-1:#25B856;
-    --grass-2:#34D66A;
-    --road-1:#1A1A24;
-    --road-2:#282836;
-    --good:#00FF7F;
-    --bad:#FF3355;
-    --gold:#FFD700;
-    --gold-dark:#FFAA00;
-    --ink:#0D1226;
-    --cream:#FFFFFD;
-    --sky-accent:#00BFFF;
-    --font-display:'Baloo 2', sans-serif;
-    --font-body:'Nunito', sans-serif;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{
-    margin:0; padding:0; width:100%; height:100%;
-    overflow:hidden; background:var(--ink);
-    font-family:var(--font-body);
-    touch-action:none;
-    user-select:none;
-  }
-  #gameCanvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard & Pop-ups</title>
+    <style>
+        /* Grundlegendes Design */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-  /* ---------- LOBBY ---------- */
-  #lobby{
-    position:absolute; inset:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:space-between;
-    background:linear-gradient(180deg, var(--sky-top) 0%, #62B6FF 38%, var(--grass-2) 38%, var(--grass-1) 100%);
-    overflow:hidden; z-index:20;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  }
-  .sun{
-    position:absolute; top:5%; right:8%; width:76px; height:76px; border-radius:50%;
-    background:radial-gradient(circle, #FFFFFF 0%, var(--sun) 55%, rgba(255,240,102,0) 75%);
-    box-shadow:0 0 50px 25px rgba(255,240,102,0.7);
-  }
-  .lobby-top{ text-align:center; margin-top:2vh; z-index:2; width:100%; position:relative; padding:0 16px; }
+        h1 {
+            color: #ffffff;
+        }
 
-  .title{
-    font-family:var(--font-display); font-weight:800; font-size:clamp(38px, 10vw, 68px);
-    color:var(--cream); letter-spacing:1px; margin:0;
-    -webkit-text-stroke:3.5px var(--ink);
-    text-shadow: 0 6px 0 var(--ink), 0 10px 20px rgba(0,0,0,0.4);
-    transform:rotate(-2deg);
-  }
-  .title span{ color:var(--gold); -webkit-text-stroke:3.5px var(--ink); }
-  .subtitle{
-    font-family:var(--font-body); font-weight:900; color:var(--ink);
-    background:var(--cream); display:inline-block; padding:4px 14px; border-radius:20px;
-    margin-top:6px; font-size:clamp(11px, 3.1vw, 13px); letter-spacing:0.5px; box-shadow:0 4px 0 rgba(0,0,0,0.2);
-  }
-  .mascot-wrap{
-    position:relative; z-index:2; display:flex; align-items:flex-end; justify-content:center;
-    height:15vh; margin-top:0;
-  }
-  .mascot-shadow{
-    width:84px; height:16px; background:rgba(0,0,0,0.3); border-radius:50%;
-    filter:blur(2px); margin-top:-14px;
-    animation: shadowPulse 1.1s ease-in-out infinite;
-  }
-  @keyframes shadowPulse{ 0%,100%{transform:scaleX(1);opacity:0.4} 50%{transform:scaleX(0.7);opacity:0.2} }
+        /* Buttons zum Öffnen */
+        .btn-container {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+        }
 
-  .stats-row{ display:flex; gap:6px; z-index:2; margin-bottom:1vh; flex-wrap:wrap; justify-content:center; padding:0 16px; }
-  .stat-card{
-    background:var(--ink); color:var(--cream); border-radius:14px; padding:6px 10px;
-    min-width:60px; text-align:center; box-shadow:0 4px 0 rgba(0,0,0,0.35);
-    border:2.5px solid rgba(255,255,255,0.15);
-  }
-  .stat-card .val{ font-family:var(--font-display); font-size:15px; font-weight:800; color:var(--gold); }
-  .stat-card .lbl{ font-size:8px; font-weight:900; letter-spacing:0.5px; opacity:0.85; text-transform:uppercase; }
+        button {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
 
-  .lobby-bottom{ z-index:2; margin-bottom:2.5vh; display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; padding:0 16px; }
-  .goal-strip{ font-size:clamp(10px, 3vw, 12px); font-weight:900; color:var(--ink); background:rgba(255,255,255,0.95); padding:5px 12px; border-radius:16px; box-shadow:0 3px 0 rgba(0,0,0,0.15); }
-  .btn-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; width:100%; }
-  
-  .play-btn{
-    font-family:var(--font-display); font-weight:800; font-size:clamp(18px, 5.5vw, 24px); letter-spacing:1px;
-    color:var(--ink); background:var(--gold); border:3.5px solid var(--ink);
-    padding:10px 26px; border-radius:20px; cursor:pointer;
-    box-shadow:0 6px 0 var(--gold-dark); transition:transform 0.06s ease;
-  }
-  .play-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 var(--gold-dark); }
-  
-  .menu-btn{
-    font-family:var(--font-display); font-weight:800; font-size:clamp(14px, 4vw, 18px);
-    border:3.5px solid var(--ink); padding:10px 14px; border-radius:20px; cursor:pointer;
-    box-shadow:0 6px 0 rgba(0,0,0,0.35); transition:transform 0.06s ease; color:#fff;
-  }
-  .menu-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,0.35); }
-  .shop-btn-bg{ background:linear-gradient(135deg,#8A2BE2,#FF1493); }
-  .leaderboard-btn-bg{ background:linear-gradient(135deg,#00BFFF,#0055FF); }
-  .account-btn-bg{ background:linear-gradient(135deg,#FF8800,#FF3300); }
-  
-  .lobby-rebirth-btn{
-    font-family:var(--font-display); font-weight:800; font-size:clamp(14px, 4vw, 18px);
-    border:3.5px solid var(--ink); padding:10px 14px; border-radius:20px; cursor:pointer;
-    color:var(--ink); background:#FF33CC; box-shadow:0 6px 0 #A30075; transition:transform 0.06s ease;
-  }
-  .lobby-rebirth-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #A30075; }
-  .lobby-rebirth-btn:disabled{ background:#ccc; color:#666; box-shadow:none; cursor:not-allowed; }
-  
-  .howto{ font-size:clamp(10px, 2.8vw, 11px); color:var(--cream); text-shadow:0 1px 3px rgba(0,0,0,0.6); font-weight:800; text-align:center; max-width:300px; }
+        button:hover {
+            background-color: #2ea043;
+        }
 
-  /* ---------- HUD ---------- */
-  #hud{ position:absolute; inset:0; pointer-events:none; z-index:10; display:none; font-family:var(--font-body); }
-  .hud-top{ position:absolute; top:max(12px, env(safe-area-inset-top)); left:12px; right:12px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
-  .pill{
-    background:rgba(13,18,38,0.9); color:var(--cream); border-radius:16px; padding:8px 12px;
-    font-weight:900; font-size:13px; display:flex; align-items:center; gap:6px;
-    box-shadow:0 4px 0 rgba(0,0,0,0.3); border:2px solid rgba(255,255,255,0.1);
-  }
-  .pill .gold{ color:var(--gold); }
-  .height-wrap{ flex:1; max-width:240px; background:rgba(13,18,38,0.9); border-radius:16px; padding:8px 12px; box-shadow:0 4px 0 rgba(0,0,0,0.3); border:2px solid rgba(255,255,255,0.1); }
-  .height-labels{ display:flex; justify-content:space-between; color:var(--cream); font-size:11px; font-weight:900; margin-bottom:4px;}
-  .height-bar-bg{ height:10px; border-radius:6px; background:rgba(255,255,255,0.2); overflow:hidden; }
-  .height-bar-fill{ height:100%; background:linear-gradient(90deg,var(--sky-accent),var(--good)); border-radius:6px; transition:width 0.15s ease; }
-  .timer-pill{ font-variant-numeric: tabular-nums; }
-  .exit-btn{
-    pointer-events: auto; background:var(--bad); color:#fff; border:3px solid var(--ink);
-    border-radius:14px; padding:8px 12px; font-family:var(--font-display); font-weight:800; font-size:13px;
-    cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,0.3); transition:transform 0.06s ease;
-  }
-  .exit-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.3); }
+        button:active {
+            transform: scale(0.98);
+        }
 
-  /* ---------- RESULT ---------- */
-  #result{ position:absolute; inset:0; z-index:30; display:none; align-items:center; justify-content:center; background:rgba(5,8,18,0.7); padding:16px; }
-  .result-card{ background:var(--cream); border-radius:28px; padding:30px 24px; text-align:center; width:min(92vw,380px); border:5px solid var(--ink); box-shadow:0 16px 0 rgba(0,0,0,0.4); }
-  .result-emoji{ font-size:54px; line-height:1; margin-bottom:6px; }
-  .result-title{ font-family:var(--font-display); font-weight:800; font-size:28px; color:var(--ink); margin:0 0 6px; }
-  .result-sub{ font-size:13px; font-weight:900; color:#4A4A5A; margin-bottom:18px; }
-  .result-stats{ display:flex; justify-content:center; gap:10px; margin-bottom:22px; flex-wrap:wrap; }
-  .result-btns{ display:flex; gap:10px; justify-content:center; }
-  .btn{ font-family:var(--font-display); font-weight:800; font-size:17px; border-radius:16px; border:3.5px solid var(--ink); padding:12px 20px; cursor:pointer; box-shadow:0 5px 0 rgba(0,0,0,0.3); transition:transform 0.06s ease; }
-  .btn:active{ transform:translateY(4px); box-shadow:0 1px 0 rgba(0,0,0,0.3); }
-  .btn-primary{ background:var(--sky-accent); color:#fff; }
-  .btn-secondary{ background:var(--cream); color:var(--ink); }
+        button.secondary {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+        }
 
-  /* ---------- MODALS (SHOP, LEADERBOARD, ACCOUNT) ---------- */
-  .modal-overlay{ position:absolute; inset:0; z-index:40; display:none; align-items:center; justify-content:center; background:rgba(5,8,18,0.75); padding:16px; }
-  .modal-card{
-    background:var(--cream); border-radius:28px; padding:20px; width:min(96vw,460px); max-height:85vh; overflow-y:auto;
-    border:5px solid var(--ink); box-shadow:0 16px 0 rgba(0,0,0,0.4); display:flex; flex-direction:column;
-  }
-  .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-  .modal-title{ font-family:var(--font-display); font-weight:800; font-size:22px; color:var(--ink); margin:0; }
-  
-  .shop-currency-row{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
-  .currency-pill{ font-family:var(--font-display); font-weight:800; background:var(--ink); padding:4px 8px; border-radius:12px; font-size:11px; }
-  .sc-coins{ color:var(--gold); }
-  .sc-score{ color:#00FF7F; }
-  .sc-trophies{ color:#FF33CC; }
+        button.secondary:hover {
+            background-color: #30363d;
+        }
 
-  .rebirth-banner{
-    background:linear-gradient(135deg, #7B2FF7, #FF1493);
-    border:3.5px solid var(--ink); border-radius:18px; padding:12px; color:#fff; margin-bottom:14px;
-    box-shadow:0 5px 0 rgba(0,0,0,0.25); display:flex; flex-direction:column; gap:6px; text-align:center;
-  }
-  .rebirth-banner h3{ font-family:var(--font-display); margin:0; font-size:17px; font-weight:800; }
-  .rebirth-banner p{ margin:0; font-size:11px; font-weight:700; opacity:0.95; }
-  .rebirth-btn{
-    font-family:var(--font-display); font-weight:800; font-size:14px; background:var(--gold); color:var(--ink);
-    border:3px solid var(--ink); border-radius:12px; padding:6px 14px; cursor:pointer; align-self:center;
-    box-shadow:0 4px 0 rgba(0,0,0,0.2); transition:transform 0.06s ease;
-  }
-  .rebirth-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.2); }
-  .rebirth-btn:disabled{ background:#ccc; color:#666; cursor:not-allowed; box-shadow:none; }
+        /* --- CLEAN ANIMATED MODALS (POP-UPS) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
 
-  .swatch-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .swatch-card{ background:#fff; border:3.5px solid var(--ink); border-radius:16px; padding:10px; text-align:center; box-shadow:0 4px 0 rgba(0,0,0,0.15); }
-  .swatch-preview{ height:50px; display:flex; align-items:center; justify-content:center; }
-  .swatch-name{ font-weight:900; font-size:12px; color:var(--ink); margin:4px 0 2px; }
-  .swatch-price{ font-size:10px; font-weight:900; color:#6A6A7A; margin-bottom:6px; }
-  .swatch-btn{ font-family:var(--font-body); font-weight:900; font-size:11px; border-radius:10px; border:2.5px solid var(--ink); padding:6px 8px; cursor:pointer; width:100%; }
-  .swatch-btn.buy{ background:var(--good); color:var(--ink); }
-  .swatch-btn.equip{ background:var(--sky-accent); color:#fff; }
-  .swatch-btn.equipped{ background:var(--gold); color:var(--ink); cursor:default; }
-  .swatch-btn.locked{ background:#ddd; color:#888; cursor:not-allowed; }
-  .swatch-txt{ font-family:'Baloo 2', sans-serif; font-weight:800; font-size:26px; }
+        .modal {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            transform: scale(0.90) translateY(15px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+            opacity: 0;
+        }
 
-  /* LEADERBOARD STYLES */
-  .lb-list{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; max-height:300px; overflow-y:auto; }
-  .lb-item{
-    display:flex; justify-content:space-between; align-items:center; background:#fff;
-    border:3px solid var(--ink); border-radius:14px; padding:10px 14px; font-weight:900; font-size:14px; color:var(--ink);
-    box-shadow:0 3px 0 rgba(0,0,0,0.15);
-  }
-  .lb-item.current-user{ background:#E0F8FF; border-color:var(--sky-accent); }
-  .lb-rank{ font-family:var(--font-display); font-size:18px; width:30px; }
-  .lb-name{ flex:1; text-align:left; padding:0 10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .lb-score{ font-family:var(--font-display); color:#008844; font-size:16px; }
-  .lb-unauth-box{
-    background:#FFF3CD; border:3.5px solid #856404; border-radius:18px; padding:16px; text-align:center; margin-bottom:14px;
-  }
-  .lb-unauth-box p{ margin:0 0 10px; font-size:13px; font-weight:900; color:#856404; }
+        /* Wenn das Pop-up aktiv ist */
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
 
-  /* ACCOUNT / AUTH STYLES */
-  .auth-form{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
-  .auth-input{
-    font-family:var(--font-body); font-weight:800; font-size:14px; border:3px solid var(--ink);
-    border-radius:14px; padding:10px 14px; background:#fff; color:var(--ink); outline:none;
-  }
-  .auth-error{ color:var(--bad); font-size:12px; font-weight:900; text-align:center; min-height:16px; margin:0; }
-  .auth-info{ background:#E8F8FF; border:3px solid var(--sky-accent); border-radius:16px; padding:14px; text-align:center; margin-bottom:14px; }
-  .auth-info h3{ font-family:var(--font-display); margin:0 0 4px; font-size:18px; color:var(--ink); }
-  .auth-info p{ margin:0; font-size:12px; font-weight:800; color:#4A4A5A; }
-</style>
+        .modal-overlay.active .modal {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+            color: #f0f6fc;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #8b949e;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .switch-text {
+            font-size: 13px;
+            color: #8b949e;
+            cursor: pointer;
+        }
+
+        .switch-text:hover {
+            color: #58a6ff;
+            text-decoration: underline;
+        }
+
+        /* --- LEADERBOARD --- */
+        .leaderboard-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .leaderboard-card h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 10px;
+            color: #f0f6fc;
+        }
+
+        .leaderboard-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid #21262d;
+            transition: background-color 0.2s ease;
+        }
+
+        .leaderboard-row:last-child {
+            border-bottom: none;
+        }
+
+        .leaderboard-row:hover {
+            background-color: #1f242c;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Der Farb-Punkt für die ausgerüstete Farbe auf dem Leaderboard */
+        .color-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px currentColor; /* Leichter Glow in Spielerfarbe */
+        }
+
+        .rank {
+            font-weight: bold;
+            color: #8b949e;
+            width: 25px;
+        }
+    </style>
 </head>
 <body>
 
-<canvas id="gameCanvas"></canvas>
+    <h1>Mein Web-Projekt</h1>
 
-<!-- LOBBY -->
-<div id="lobby">
-  <div class="sun"></div>
-  <div class="lobby-top">
-    <h1 class="title">67 <span>RUN</span></h1>
-    <div class="subtitle" id="lobbySubtitle">Wachse so groß wie möglich bis zur Ziellinie 🏁</div>
-  </div>
-
-  <div class="mascot-wrap">
-    <div style="display:flex; flex-direction:column; align-items:center;">
-      <canvas id="mascotCanvas" width="340" height="340" style="width:130px; height:130px;"></canvas>
-      <div class="mascot-shadow"></div>
-    </div>
-  </div>
-
-  <div class="stats-row" id="lobbyStats"></div>
-
-  <div class="lobby-bottom">
-    <div class="goal-strip">Start bei 1.0 ft · Ziel 6.7 ft · 100x ft Münzen & Score</div>
-    <div class="btn-row">
-      <button class="play-btn" id="playBtn">▶ SPIELEN</button>
-      <button class="menu-btn shop-btn-bg" id="shopOpenBtn">🎨 Shop</button>
-      <button class="menu-btn leaderboard-btn-bg" id="lbOpenBtn">🏆 Leaderboard</button>
-      <button class="menu-btn account-btn-bg" id="accountOpenBtn">👤 Account</button>
-      <button class="lobby-rebirth-btn" id="lobbyRebirthBtn">⚡ Rebirth (5 🏆)</button>
-    </div>
-    <div class="howto">Wische links/rechts oder tippe auf die Bildschirmhälfte zum Ausweichen</div>
-  </div>
-</div>
-
-<!-- HUD -->
-<div id="hud">
-  <div class="hud-top">
-    <div class="pill">🪙 <span class="gold" id="hudCoins">0</span></div>
-    <div class="height-wrap">
-      <div class="height-labels"><span id="hudHeightNum">1.0 ft</span><span>🏁 6.7 ft</span></div>
-      <div class="height-bar-bg"><div class="height-bar-fill" id="hudHeightBar" style="width:0%"></div></div>
-    </div>
-    <div class="pill timer-pill">⏱ <span id="hudTimer">26</span>s</div>
-    <button class="exit-btn" id="exitBtn">🏠 Lobby</button>
-  </div>
-</div>
-
-<!-- RESULT -->
-<div id="result">
-  <div class="result-card">
-    <div class="result-emoji" id="resEmoji">🏆</div>
-    <h2 class="result-title" id="resTitle">Geschafft!</h2>
-    <div class="result-sub" id="resSub">Du hast 6.7 ft erreicht!</div>
-    <div class="result-stats" id="resStats"></div>
-    <div class="result-btns">
-      <button class="btn btn-primary" id="retryBtn">🔁 Nochmal</button>
-      <button class="btn btn-secondary" id="lobbyBtn">🏠 Lobby</button>
-    </div>
-  </div>
-</div>
-
-<!-- SHOP MODAL -->
-<div class="modal-overlay" id="shopModal">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h2 class="modal-title">🎨 Shop & Rebirth</h2>
-      <div class="shop-currency-row">
-        <div class="currency-pill sc-coins">🪙 <span id="shopCoins">0</span></div>
-        <div class="currency-pill sc-score">⭐ <span id="shopScore">0</span></div>
-        <div class="currency-pill sc-trophies">🏆 <span id="shopTrophies">0</span></div>
-      </div>
+    <div class="btn-container">
+        <button onclick="openModal('loginModal')">Anmelden</button>
+        <button class="secondary" onclick="openModal('registerModal')">Registrieren</button>
     </div>
 
-    <!-- REBIRTH SECTION -->
-    <div class="rebirth-banner" id="rebirthBanner">
-      <h3 id="rebirthTitle">⚡ Rebirth I</h3>
-      <p id="rebirthDesc">Setzt Münzen & Farben zurück, gibt aber dauerhaft +0.1x Münzen!</p>
-      <button class="rebirth-btn" id="rebirthBtn">Rebirth kaufen (5 🏆)</button>
+    <!-- LEADERBOARD -->
+    <div class="leaderboard-card">
+        <h3>Top Leaderboard</h3>
+        <div id="leaderboardList">
+            <!-- Wird dynamisch per JavaScript gefüllt, inklusive der ausgerüsteten Farbe -->
+        </div>
     </div>
 
-    <div class="swatch-grid" id="shopGrid"></div>
-    <button class="btn btn-secondary" style="width:100%; margin-top:14px;" id="shopCloseBtn">Schließen</button>
-  </div>
-</div>
-
-<!-- LEADERBOARD MODAL -->
-<div class="modal-overlay" id="lbModal">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h2 class="modal-title">🏆 Bestenliste</h2>
-      <button class="btn btn-secondary" style="padding:6px 12px; font-size:13px;" id="lbCloseBtn">X</button>
+    <!-- LOGIN MODAL -->
+    <div id="loginModal" class="modal-overlay" onclick="handleOverlayClick(event, 'loginModal')">
+        <div class="modal">
+            <h2>Anmelden</h2>
+            <div class="form-group">
+                <label>Benutzername</label>
+                <input type="text" placeholder="Dein Name">
+            </div>
+            <div class="form-group">
+                <label>Passwort</label>
+                <input type="password" placeholder="••••••••">
+            </div>
+            <div class="modal-footer">
+                <span class="switch-text" onclick="switchModal('loginModal', 'registerModal')">Noch kein Konto? Registrieren</span>
+                <button onclick="closeModal('loginModal')">Einloggen</button>
+            </div>
+        </div>
     </div>
-    <div id="lbContent"></div>
-    <button class="btn btn-secondary" style="width:100%; margin-top:6px;" id="lbCloseBtn2">Schließen</button>
-  </div>
-</div>
 
-<!-- ACCOUNT MODAL -->
-<div class="modal-overlay" id="accountModal">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h2 class="modal-title">👤 Account & Login</h2>
-      <button class="btn btn-secondary" style="padding:6px 12px; font-size:13px;" id="accountCloseBtn">X</button>
+    <!-- REGISTRIERUNGS MODAL (Extra Fenster) -->
+    <div id="registerModal" class="modal-overlay" onclick="handleOverlayClick(event, 'registerModal')">
+        <div class="modal">
+            <h2>Registrieren</h2>
+            <div class="form-group">
+                <label>Neuer Benutzername</label>
+                <input type="text" placeholder="Dein Wunschname">
+            </div>
+            <div class="form-group">
+                <label>Passwort wählen</label>
+                <input type="password" placeholder="••••••••">
+            </div>
+            <div class="modal-footer">
+                <span class="switch-text" onclick="switchModal('registerModal', 'loginModal')">Bereits ein Konto? Anmelden</span>
+                <button onclick="closeModal('registerModal')">Registrieren</button>
+            </div>
+        </div>
     </div>
-    <div id="accountContent"></div>
-    <button class="btn btn-secondary" style="width:100%; margin-top:14px;" id="accountCloseBtn2">Schließen</button>
-  </div>
-</div>
 
-<script>
-(function(){
-  "use strict";
+    <script>
+        // Beispiel-Daten für das Leaderboard inklusive der aktuell ausgerüsteten Farbe
+        const leaderboardData = [
+            { rank: 1, name: "ShadowSniper", equippedColor: "#ff4757" }, // Rot
+            { rank: 2, name: "PixelKing", equippedColor: "#2ed573" },    // Grün
+            { rank: 3, name: "NeonRider", equippedColor: "#1e90ff" },    // Blau
+            { rank: 4, name: "Blaze67", equippedColor: "#ffa502" }      // Orange
+        ];
 
-  /* ============ AUDIO API ============ */
-  let audioCtx = null;
-  function initAudioCtx(){
-    if(!audioCtx){
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if(AudioContext) audioCtx = new AudioContext();
-    }
-    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-  }
+        // Leaderboard rendern und dabei die ausgerüstete Farbe anzeigen
+        function renderLeaderboard() {
+            const listContainer = document.getElementById('leaderboardList');
+            listContainer.innerHTML = '';
 
-  function playTone(freq, duration, type='sine', gainVal=0.1){
-    initAudioCtx();
-    if(!audioCtx) return;
-    try {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + duration);
-    } catch(e){}
-  }
-
-  function sfxClick(){ playTone(520, 0.06, 'triangle', 0.12); }
-  function sfxGood(){ playTone(660, 0.1, 'sine', 0.18); setTimeout(()=>playTone(980, 0.12, 'sine', 0.18), 70); }
-  function sfxBad(){ playTone(160, 0.18, 'sawtooth', 0.15); setTimeout(()=>playTone(110, 0.2, 'sawtooth', 0.15), 90); }
-  function sfxWin(){ [523.25, 659.25, 783.99, 1046.50].forEach((f,i)=>setTimeout(()=>playTone(f, 0.18, 'triangle', 0.2), i*90)); }
-  function sfxRebirth(){ [300, 450, 600, 900].forEach((f,i)=>setTimeout(()=>playTone(f, 0.22, 'sine', 0.22), i*80)); }
-
-  /* ============ COLOR CATALOG ============ */
-  const COLORS = [
-    { id:'sunset',   name:'Sonnenuntergang', price:0,       stops:['#FFEE33','#FF5500'] },
-    { id:'lime',     name:'Neon Limette',    price:3500,    stops:['#CCFF00','#00CC33'] },
-    { id:'sky',      name:'Elektro Blau',    price:7500,    stops:['#33EEFF','#0066FF'] },
-    { id:'ocean',    name:'Cyber Ozean',     price:12000,   stops:['#00FFFF','#0022DD'] },
-    { id:'mint',     name:'Laser Mint',      price:18000,   stops:['#00FF99','#009944'] },
-    { id:'berry',    name:'Neon Beere',      price:25000,   stops:['#FF33CC','#7700FF'] },
-    { id:'lava',     name:'Vulkan Lava',     price:34000,   stops:['#FF9900','#EE0000'] },
-    { id:'ice',      name:'Diamant Eis',     price:45000,   stops:['#FFFFFF','#00BFFF','#0044FF'] },
-    { id:'toxic',    name:'Radioaktiv',      price:58000,   stops:['#99FF00','#00FF66','#003311'] },
-    { id:'gold',     name:'Pure Gold',       price:75000,   stops:['#FFFF55','#FF8800','#CC6600'] },
-    { id:'neonpunk', name:'Cyberpunk',       price:95000,   stops:['#FF007F','#7209B7','#00FFFF'] },
-    { id:'magma',    name:'Magma Core',      price:120000,  stops:['#FF3300','#FF6600','#FFFF00'] },
-    { id:'amethyst', name:'Amethyst',        price:150000,  stops:['#8800FF','#FF00FF','#FFAAFF'] },
-    { id:'matrix',   name:'Matrix',          price:185000,  stops:['#00FF44','#002200','#00FFDD'] },
-    { id:'galaxy',   name:'Supernova',       price:220000,  stops:['#9900FF','#00EFFF','#FF33BB'] },
-    { id:'obsidian', name:'Obsidian',        price:260000,  stops:['#555566','#111122','#334466'] },
-    { id:'phoenix',  name:'Phönix',          price:310000,  stops:['#FFCC00','#FF3300','#660000'] },
-    { id:'rainbow',  name:'RGB Gaming',      price:600000,  stops:['#FF0000','#FFFF00','#00FF00','#00FFFF','#0000FF','#FF00FF'], animated:true }
-  ];
-
-  /* ============ PERSISTENT STATS & ACCOUNTS ============ */
-  const DEFAULT_STATS = { coins:0, score:0, bestHeight:1.0, trophies:0, games:0, rebirths:0, ownedColors:['sunset'], equippedColor:'sunset' };
-  let stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
-  let currentUser = null; // Name des angemeldeten Spielers oder null
-
-  function loadUserData(){
-    try{
-      const activeName = localStorage.getItem('activeUser67');
-      if(activeName){
-        const userSave = localStorage.getItem('userSave67_' + activeName);
-        if(userSave){
-          currentUser = activeName;
-          stats = {...DEFAULT_STATS, ...JSON.parse(userSave)};
-          if(!Array.isArray(stats.ownedColors) || !stats.ownedColors.includes('sunset')){
-            stats.ownedColors = ['sunset', ...(stats.ownedColors||[])];
-          }
+            leaderboardData.forEach(player => {
+                const row = document.createElement('div');
+                row.className = 'leaderboard-row';
+                
+                row.innerHTML = `
+                    <div class="player-info">
+                        <span class="rank">#${player.rank}</span>
+                        <!-- Hier wird die aktuelle Farbe direkt im Leaderboard angezeigt -->
+                        <span class="color-indicator" style="background-color: ${player.equippedColor}; color: ${player.equippedColor};"></span>
+                        <span>${player.name}</span>
+                    </div>
+                `;
+                listContainer.appendChild(row);
+            });
         }
-      }
-    }catch(e){}
-    renderLobbyStats();
-  }
 
-  function saveUserData(){
-    try{
-      if(currentUser){
-        localStorage.setItem('userSave67_' + currentUser, JSON.stringify(stats));
-        updateLeaderboardEntry();
-      }
-    }catch(e){}
-  }
-
-  function updateLeaderboardEntry(){
-    if(!currentUser) return;
-    try{
-      let lb = JSON.parse(localStorage.getItem('leaderboard67_v1') || '[]');
-      const existingIdx = lb.findIndex(item => item.name === currentUser);
-      if(existingIdx >= 0){
-        lb[existingIdx].score = Math.max(lb[existingIdx].score, stats.score);
-        lb[existingIdx].trophies = Math.max(lb[existingIdx].trophies, stats.trophies);
-      } else {
-        lb.push({ name: currentUser, score: stats.score, trophies: stats.trophies });
-      }
-      lb.sort((a,b) => b.score - a.score);
-      localStorage.setItem('leaderboard67_v1', JSON.stringify(lb));
-    }catch(e){}
-  }
-
-  function renderLobbyStats(){
-    const el = document.getElementById('lobbyStats');
-    const sub = document.getElementById('lobbySubtitle');
-    if(currentUser){
-      sub.innerHTML = `Eingeloggt als <span style="color:#008844;">${currentUser}</span> 👤 · Wachse bis zur Ziellinie 🏁`;
-    } else {
-      sub.innerHTML = `Nicht angemeldet ⚠️ · <span style="color:#A30000; cursor:pointer;" onclick="document.getElementById('accountOpenBtn').click()">Hier anmelden</span>`;
-    }
-    const nextRebirthCost = (stats.rebirths + 1) * 5;
-    el.innerHTML = `
-      <div class="stat-card"><div class="val">${stats.bestHeight.toFixed(1)}</div><div class="lbl">Beste ft</div></div>
-      <div class="stat-card"><div class="val">${stats.score}</div><div class="lbl">Score</div></div>
-      <div class="stat-card"><div class="val">${stats.coins}</div><div class="lbl">Münzen</div></div>
-      <div class="stat-card"><div class="val">${stats.trophies}</div><div class="lbl">Pokale</div></div>
-      <div class="stat-card"><div class="val">${stats.rebirths}</div><div class="lbl">Rebirths</div></div>
-    `;
-    const lobbyRBtn = document.getElementById('lobbyRebirthBtn');
-    lobbyRBtn.textContent = `⚡ Rebirth (${nextRebirthCost} 🏆)`;
-    lobbyRBtn.disabled = stats.trophies < nextRebirthCost;
-  }
-
-  /* ============ SHOP UI ============ */
-  function renderShop(){
-    document.getElementById('shopCoins').textContent = stats.coins;
-    document.getElementById('shopScore').textContent = stats.score;
-    document.getElementById('shopTrophies').textContent = stats.trophies;
-
-    const nextRebirthCost = (stats.rebirths + 1) * 5;
-    const currentMult = (1.0 + stats.rebirths * 0.1).toFixed(1);
-    const nextMult = (1.0 + (stats.rebirths + 1) * 0.1).toFixed(1);
-    
-    document.getElementById('rebirthTitle').textContent = `⚡ Rebirth ${stats.rebirths+1} (Aktuell: ${currentMult}x Münzen)`;
-    document.getElementById('rebirthDesc').textContent = `Setzt Münzen & Farben zurück, gibt dir aber dauerhaft ${nextMult}x Münzen! (Score bleibt erhalten)`;
-    const rBtn = document.getElementById('rebirthBtn');
-    rBtn.textContent = `Rebirth kaufen (${nextRebirthCost} 🏆)`;
-    rBtn.disabled = stats.trophies < nextRebirthCost;
-
-    const grid = document.getElementById('shopGrid');
-    grid.innerHTML = '';
-    for(const c of COLORS){
-      const owned = stats.ownedColors.includes(c.id);
-      const equipped = stats.equippedColor === c.id;
-      const grad = `linear-gradient(90deg, ${c.stops.join(',')})`;
-      const card = document.createElement('div');
-      card.className = 'swatch-card';
-      let btnHtml;
-      if(equipped) btnHtml = `<button class="swatch-btn equipped" disabled>Ausgerüstet</button>`;
-      else if(owned) btnHtml = `<button class="swatch-btn equip" data-equip="${c.id}">Ausrüsten</button>`;
-      else if(stats.coins >= c.price) btnHtml = `<button class="swatch-btn buy" data-buy="${c.id}">Kaufen · ${c.price}🪙</button>`;
-      else btnHtml = `<button class="swatch-btn locked" disabled>🔒 ${c.price}🪙</button>`;
-      card.innerHTML = `
-        <div class="swatch-preview">
-          <span class="swatch-txt" style="background:${grad}; -webkit-background-clip:text; background-clip:text; color:transparent;">67</span>
-        </div>
-        <div class="swatch-name">${c.name}${c.id==='rainbow'?' 🌈':''}</div>
-        <div class="swatch-price">${c.price===0?'Standard':(owned?'Im Besitz':'Preis')}</div>
-        ${btnHtml}
-      `;
-      grid.appendChild(card);
-    }
-    grid.querySelectorAll('[data-buy]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        sfxClick();
-        const id = btn.getAttribute('data-buy');
-        const color = COLORS.find(c=>c.id===id);
-        if(!color || stats.coins < color.price) return;
-        stats.coins -= color.price;
-        stats.ownedColors.push(id);
-        stats.equippedColor = id;
-        saveUserData();
-        renderShop(); renderLobbyStats();
-      });
-    });
-    grid.querySelectorAll('[data-equip]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        sfxClick();
-        stats.equippedColor = btn.getAttribute('data-equip');
-        saveUserData();
-        renderShop();
-      });
-    });
-  }
-
-  function performRebirth(){
-    const cost = (stats.rebirths + 1) * 5;
-    if(stats.trophies < cost) return;
-    sfxRebirth();
-    stats.trophies -= cost;
-    stats.rebirths += 1;
-    stats.coins = 0;
-    stats.ownedColors = ['sunset'];
-    stats.equippedColor = 'sunset';
-    saveUserData();
-    renderShop();
-    renderLobbyStats();
-  }
-  document.getElementById('rebirthBtn').addEventListener('click', performRebirth);
-  document.getElementById('lobbyRebirthBtn').addEventListener('click', performRebirth);
-
-  /* ============ LEADERBOARD UI ============ */
-  function renderLeaderboard(){
-    const content = document.getElementById('lbContent');
-    if(!currentUser){
-      content.innerHTML = `
-        <div class="lb-unauth-box">
-          <p>⚠️ Du bist nicht angemeldet!<br>Nur angemeldete Spieler werden in der Bestenliste angezeigt.</p>
-          <button class="btn btn-primary" style="font-size:14px; padding:8px 16px;" id="lbLoginPromptBtn">Jetzt anmelden / registrieren</button>
-        </div>
-      `;
-      document.getElementById('lbLoginPromptBtn').addEventListener('click', ()=>{
-        document.getElementById('lbModal').style.display = 'none';
-        document.getElementById('accountModal').style.display = 'flex';
-        renderAccountModal();
-      });
-      return;
-    }
-
-    // Sicherstellen dass der eigene Score aktuell im Leaderboard steht
-    updateLeaderboardEntry();
-
-    let lb = [];
-    try{
-      lb = JSON.parse(localStorage.getItem('leaderboard67_v1') || '[]');
-    }catch(e){}
-
-    if(lb.length === 0){
-      content.innerHTML = `<p style="text-align:center; font-weight:900; color:#6A6A7A;">Noch keine Einträge vorhanden.</p>`;
-      return;
-    }
-
-    let html = '<div class="lb-list">';
-    lb.forEach((entry, idx)=>{
-      const isMe = entry.name === currentUser;
-      const rankEmoji = idx===0?'🥇':(idx===1?'🥈':(idx===2?'🥉':`#${idx+1}`));
-      html += `
-        <div class="lb-item ${isMe?'current-user':''}">
-          <div class="lb-rank">${rankEmoji}</div>
-          <div class="lb-name">${entry.name}${isMe?' (Du)':''}</div>
-          <div class="lb-score">⭐ ${entry.score}</div>
-        </div>
-      `;
-    });
-    html += '</div>';
-    content.innerHTML = html;
-  }
-
-  /* ============ ACCOUNT / AUTH UI ============ */
-  function renderAccountModal(){
-    const content = document.getElementById('accountContent');
-    if(currentUser){
-      content.innerHTML = `
-        <div class="auth-info">
-          <h3>Eingeloggt als</h3>
-          <p style="font-size:18px; font-weight:900; color:#006622; margin:6px 0;">${currentUser}</p>
-          <p>Dein Score wird automatisch in der Bestenliste gespeichert.</p>
-        </div>
-        <button class="btn btn-secondary" style="background:#FF3355; color:#fff; width:100%;" id="logoutBtn">Abmelden</button>
-      `;
-      document.getElementById('logoutBtn').addEventListener('click', ()=>{
-        sfxClick();
-        localStorage.removeItem('activeUser67');
-        currentUser = null;
-        stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
-        renderLobbyStats();
-        renderAccountModal();
-      });
-    } else {
-      content.innerHTML = `
-        <div class="auth-form">
-          <input type="text" id="authUsername" class="auth-input" placeholder="Benutzername" maxlength="16">
-          <input type="password" id="authPassword" class="auth-input" placeholder="Passwort">
-          <p class="auth-error" id="authError"></p>
-          <button class="btn btn-primary" style="width:100%;" id="loginBtn">Anmelden</button>
-          <button class="btn btn-secondary" style="width:100%; background:#00FF7F;" id="registerBtn">Neuen Account erstellen</button>
-        </div>
-      `;
-
-      document.getElementById('loginBtn').addEventListener('click', ()=>{
-        sfxClick();
-        const u = document.getElementById('authUsername').value.trim();
-        const p = document.getElementById('authPassword').value;
-        const err = document.getElementById('authError');
-        if(!u || !p){ err.textContent = 'Bitte alle Felder ausfüllen!'; return; }
-
-        try{
-          const savedPass = localStorage.getItem('userPass67_' + u);
-          if(savedPass === null){
-            err.textContent = 'Account existiert nicht! Bitte registrieren.';
-            return;
-          }
-          if(savedPass !== p){
-            err.textContent = 'Falsches Passwort!';
-            return;
-          }
-          // Login erfolgreich
-          localStorage.setItem('activeUser67', u);
-          currentUser = u;
-          const userSave = localStorage.getItem('userSave67_' + u);
-          if(userSave) stats = {...DEFAULT_STATS, ...JSON.parse(userSave)};
-          else stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
-
-          renderLobbyStats();
-          document.getElementById('accountModal').style.display = 'none';
-        }catch(e){ err.textContent = 'Fehler beim Anmelden.'; }
-      });
-
-      document.getElementById('registerBtn').addEventListener('click', ()=>{
-        sfxClick();
-        const u = document.getElementById('authUsername').value.trim();
-        const p = document.getElementById('authPassword').value;
-        const err = document.getElementById('authError');
-        if(!u || !p){ err.textContent = 'Bitte alle Felder ausfüllen!'; return; }
-        if(u.length < 3){ err.textContent = 'Name muss min. 3 Zeichen lang sein!'; return; }
-
-        try{
-          const existing = localStorage.getItem('userPass67_' + u);
-          if(existing !== null){
-            err.textContent = 'Benutzername ist bereits vergeben!';
-            return;
-          }
-          // Registrierung erfolgreich
-          localStorage.setItem('userPass67_' + u, p);
-          localStorage.setItem('activeUser67', u);
-          currentUser = u;
-          stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
-          saveUserData();
-
-          renderLobbyStats();
-          document.getElementById('accountModal').style.display = 'none';
-        }catch(e){ err.textContent = 'Fehler bei Registrierung.'; }
-      });
-    }
-  }
-
-  /* MODAL EVENT LISTENERS */
-  document.getElementById('shopOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderShop(); document.getElementById('shopModal').style.display = 'flex'; });
-  document.getElementById('shopCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('shopModal').style.display = 'none'; });
-  document.getElementById('shopModal').addEventListener('click', (e)=>{ if(e.target.id === 'shopModal') document.getElementById('shopModal').style.display = 'none'; });
-
-  document.getElementById('lbOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderLeaderboard(); document.getElementById('lbModal').style.display = 'flex'; });
-  document.getElementById('lbCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('lbModal').style.display = 'none'; });
-  document.getElementById('lbCloseBtn2').addEventListener('click', ()=>{ sfxClick(); document.getElementById('lbModal').style.display = 'none'; });
-  document.getElementById('lbModal').addEventListener('click', (e)=>{ if(e.target.id === 'lbModal') document.getElementById('lbModal').style.display = 'none'; });
-
-  document.getElementById('accountOpenBtn').addEventListener('click', ()=>{ sfxClick(); renderAccountModal(); document.getElementById('accountModal').style.display = 'flex'; });
-  document.getElementById('accountCloseBtn').addEventListener('click', ()=>{ sfxClick(); document.getElementById('accountModal').style.display = 'none'; });
-  document.getElementById('accountCloseBtn2').addEventListener('click', ()=>{ sfxClick(); document.getElementById('accountModal').style.display = 'none'; });
-  document.getElementById('accountModal').addEventListener('click', (e)=>{ if(e.target.id === 'accountModal') document.getElementById('accountModal').style.display = 'none'; });
-
-
-  /* ============ CONSTANTS & GAME LOGIC ============ */
-  const START_HEIGHT = 1.0;
-  const GOAL_HEIGHT = 6.7;
-  const MIN_HEIGHT = 0.3;
-  const TIME_LIMIT = 26;
-  const FINISH_LEAD = 4.2;
-  const HORIZON_FRAC = 0.40;
-  const ROAD_TOP_W = 0.10;
-  const ROAD_BOTTOM_W = 0.88;
-  const PLAYER_DEPTH = 0.90;
-
-  function rand(a,b){ return a + Math.random()*(b-a); }
-  function lerp(a,b,t){ return a+(b-a)*t; }
-  function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-
-  function getColorDef(id){ return COLORS.find(c=>c.id===id) || COLORS[0]; }
-  function makeCanvasGradient(ctx, x0,y0,x1,y1, colorDef, timeSec){
-    const g = ctx.createLinearGradient(x0,y0,x1,y1);
-    const stops = colorDef.stops;
-    if(colorDef.animated){
-      const shift = (timeSec*0.2) % 1;
-      const n = stops.length;
-      for(let i=0;i<=n;i++){
-        const pos = ((i/n) + shift) % 1;
-        g.addColorStop(clamp(pos,0,1), stops[i%n]);
-      }
-    } else {
-      stops.forEach((c,i)=> g.addColorStop(i/(stops.length-1||1), c));
-    }
-    return g;
-  }
-
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  function resize(){
-    canvas.width = window.innerWidth * devicePixelRatio;
-    canvas.height = window.innerHeight * devicePixelRatio;
-    canvas.style.width = window.innerWidth+'px';
-    canvas.style.height = window.innerHeight+'px';
-    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-  }
-  window.addEventListener('resize', resize);
-  resize();
-  function W(){ return window.innerWidth; }
-  function H(){ return window.innerHeight; }
-  function horizonY(){ return H()*HORIZON_FRAC; }
-  function roadWidthAt(depth){ return lerp(W()*ROAD_TOP_W, W()*ROAD_BOTTOM_W, depth); }
-  function roadYAt(depth){ return lerp(horizonY(), H()+40, depth); }
-  function roadLeftAt(depth){ return W()/2 - roadWidthAt(depth)/2; }
-  function laneCenterX(depth, laneFrac){
-    const left = roadLeftAt(depth), w = roadWidthAt(depth);
-    return left + w*(0.25 + laneFrac*0.5);
-  }
-
-  const mascotCanvas = document.getElementById('mascotCanvas');
-  const mctx = mascotCanvas.getContext('2d');
-  function drawMascotPreview(ts){
-    mctx.clearRect(0,0,340,340);
-    const colorDef = getColorDef(stats.equippedColor);
-    mctx.save();
-    mctx.translate(170, 170 + Math.sin(ts/400)*12);
-    const grad = makeCanvasGradient(mctx, -100,0,100,0, colorDef, ts/1000);
-    mctx.fillStyle = grad;
-    mctx.font = "800 190px 'Baloo 2', sans-serif";
-    mctx.textAlign = 'center'; mctx.textBaseline='middle';
-    mctx.shadowColor='rgba(0,0,0,0.5)'; mctx.shadowBlur=16; mctx.shadowOffsetY=8;
-    mctx.fillText('67', 0, 6);
-    mctx.restore();
-    requestAnimationFrame(drawMascotPreview);
-  }
-  requestAnimationFrame(drawMascotPreview);
-
-  let state = 'lobby';
-  let player = { lane:0, dispLaneFrac:0, height:START_HEIGHT, bob:0 };
-  let gates = [];
-  let finishLine = null;
-  let particles = [];
-  let elapsed = 0;
-  let spawnTimer = 0;
-  let lastTime = null;
-  let resultShown = false;
-  let clouds = [];
-
-  function initClouds(){
-    clouds = [];
-    for(let i=0;i<6;i++){
-      clouds.push({ x:Math.random()*W(), y: rand(15, horizonY()*0.65), s: rand(0.6,1.4), speed: rand(8,16) });
-    }
-  }
-
-  function resetGame(){
-    player.lane = 0; player.dispLaneFrac = 0; player.height = START_HEIGHT; player.bob = 0;
-    gates = []; finishLine = null; particles = [];
-    elapsed = 0; spawnTimer = 1.0;
-    resultShown = false;
-    initClouds();
-  }
-
-  function heightScale(h){ return clamp(0.5 + (h-1.0)*0.14, 0.4, 1.7); }
-
-  function switchLane(dir){ if(state !== 'playing') return; player.lane = clamp(player.lane + dir, 0, 1); sfxClick(); }
-  window.addEventListener('keydown', (e)=>{
-    if(e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') switchLane(-1);
-    if(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') switchLane(1);
-  });
-  let touchStartX=null, touchStartY=null;
-  canvas.addEventListener('touchstart', (e)=>{ const t=e.changedTouches[0]; touchStartX=t.clientX; touchStartY=t.clientY; }, {passive:true});
-  canvas.addEventListener('touchend', (e)=>{
-    if(touchStartX===null) return;
-    const t=e.changedTouches[0]; const dx=t.clientX-touchStartX, dy=t.clientY-touchStartY;
-    if(Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) switchLane(dx>0?1:-1);
-    else if(Math.abs(dx) < 20 && Math.abs(dy) < 20) switchLane(t.clientX < W()/2 ? -1 : 1);
-    touchStartX=null; touchStartY=null;
-  }, {passive:true});
-  canvas.addEventListener('click', (e)=>{ if(state==='playing') switchLane(e.clientX < W()/2 ? -1 : 1); });
-
-  function makeGateSide(){
-    const isMega = Math.random() < 0.22;
-    const isGood = Math.random() < 0.62; 
-    let value = isGood ? (isMega ? rand(1.2, 1.8) : rand(0.4, 0.8)) : (isMega ? -rand(0.5, 0.9) : -rand(0.15, 0.35));
-    return { value: Math.round(value*10)/10, isGood, isMega };
-  }
-  
-  function spawnGate(){ gates.push({ depth:0.0, left: makeGateSide(), right: makeGateSide(), resolved:false }); }
-
-  function applyGateResult(side){
-    player.height = clamp(player.height + side.value, 0, 20);
-    if(side.isGood) sfxGood(); else sfxBad();
-    spawnFloatingText(laneCenterX(PLAYER_DEPTH, player.lane), roadYAt(PLAYER_DEPTH) - 60,
-      (side.value>0?'+':'') + side.value.toFixed(1) + ' ft', side.isGood ? '#00FF7F' : '#FF3355');
-    burst(laneCenterX(PLAYER_DEPTH, player.lane), roadYAt(PLAYER_DEPTH)-20, side.isGood?'#00FF7F':'#FF3355');
-  }
-
-  function spawnFloatingText(x,y,text,color){ particles.push({ type:'text', x, y, text, color, life:1.1, vy:-40 }); }
-  function burst(x,y,color){
-    for(let i=0;i<16;i++){
-      const ang = Math.random()*Math.PI*2, spd = rand(70,200);
-      particles.push({ type:'dot', x, y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd, life:0.6, color });
-    }
-  }
-  function confettiBurst(){
-    const colors=['#FFD700','#00FF7F','#00BFFF','#FF3355','#FFFF66','#FF33CC'];
-    for(let i=0;i<100;i++){
-      particles.push({ type:'confetti', x: rand(0,W()), y:-20, vx: rand(-50,50), vy: rand(140,280),
-        life: rand(2,3.5), color: colors[Math.floor(Math.random()*colors.length)], rot: rand(0,6.28), vr: rand(-5,5) });
-    }
-  }
-
-  function update(dt){
-    elapsed += dt;
-    player.dispLaneFrac = lerp(player.dispLaneFrac, player.lane, Math.min(1, dt*12));
-    player.bob += dt*9;
-
-    const difficultyT = clamp(elapsed/TIME_LIMIT, 0, 1);
-    const speed = lerp(0.25, 0.46, difficultyT);
-    const spawnEvery = lerp(2.4, 1.7, difficultyT);
-
-    if(elapsed < TIME_LIMIT - FINISH_LEAD - 0.8){
-      spawnTimer -= dt;
-      if(spawnTimer <= 0 && !finishLine){ spawnGate(); spawnTimer = spawnEvery; }
-    }
-
-    for(const g of gates){
-      g.depth += speed*dt;
-      if(!g.resolved && g.depth >= PLAYER_DEPTH){
-        g.resolved = true;
-        const side = player.lane===0 ? g.left : g.right;
-        applyGateResult(side);
-      }
-    }
-    gates = gates.filter(g => g.depth < 1.35);
-
-    if(!finishLine && elapsed >= TIME_LIMIT - FINISH_LEAD){
-      finishLine = { depth:0.0, resolved:false };
-    }
-    if(finishLine){
-      finishLine.depth += speed*dt;
-      if(!finishLine.resolved && finishLine.depth >= PLAYER_DEPTH){
-        finishLine.resolved = true;
-        endGame(player.height >= GOAL_HEIGHT ? 'win' : 'finish');
-      }
-    }
-
-    for(const c of clouds){ c.x += c.speed*dt; if(c.x > W()+90) c.x = -90; }
-
-    particles = particles.filter(p => p.life > 0);
-    for(const p of particles){
-      p.life -= dt;
-      if(p.type==='text'){ p.y += p.vy*dt; }
-      else if(p.type==='dot'){ p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 280*dt; }
-      else if(p.type==='confetti'){ p.x += p.vx*dt; p.y += p.vy*dt; p.rot += p.vr*dt; }
-    }
-
-    updateHud();
-
-    if(state==='playing'){
-      if(player.height <= MIN_HEIGHT) endGame('lose');
-      else if(elapsed >= TIME_LIMIT + 2) endGame(player.height >= GOAL_HEIGHT ? 'win' : 'finish');
-    }
-  }
-
-  function drawSky(){
-    const g = ctx.createLinearGradient(0,0,0,horizonY());
-    g.addColorStop(0, '#0066FF'); g.addColorStop(1, '#88DDFF');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W(),horizonY());
-    
-    const sx = W()*0.84, sy = horizonY()*0.28;
-    const sg = ctx.createRadialGradient(sx,sy,5, sx,sy,80);
-    sg.addColorStop(0,'#FFFFFF'); sg.addColorStop(0.5,'#FFFF33'); sg.addColorStop(1,'rgba(255,255,51,0)');
-    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx,sy,80,0,7); ctx.fill();
-
-    ctx.fillStyle = 'rgba(255,255,255,0.95)';
-    for(const c of clouds){
-      const s = c.s;
-      ctx.beginPath();
-      ctx.ellipse(c.x, c.y, 36*s, 15*s, 0,0,7);
-      ctx.ellipse(c.x+28*s, c.y+4*s, 24*s, 13*s,0,0,7);
-      ctx.ellipse(c.x-26*s, c.y+5*s, 22*s, 12*s,0,0,7);
-      ctx.fill();
-    }
-  }
-
-  function drawGround(){
-    const gg = ctx.createLinearGradient(0,horizonY(),0,H());
-    gg.addColorStop(0,'#2BE66C'); gg.addColorStop(1,'#128537');
-    ctx.fillStyle = gg; ctx.fillRect(0,horizonY(),W(),H()-horizonY());
-
-    const topW = roadWidthAt(0), botW = roadWidthAt(1);
-    const topL = W()/2 - topW/2, topR = W()/2 + topW/2;
-    const botL = W()/2 - botW/2, botR = W()/2 + botW/2;
-    const rg = ctx.createLinearGradient(0,horizonY(),0,H());
-    rg.addColorStop(0,'#2D2D3D'); rg.addColorStop(1,'#14141C');
-    ctx.fillStyle = rg;
-    ctx.beginPath(); ctx.moveTo(topL,horizonY()); ctx.lineTo(topR,horizonY()); ctx.lineTo(botR,H()); ctx.lineTo(botL,H()); ctx.closePath(); ctx.fill();
-
-    ctx.strokeStyle = '#00FFDD'; ctx.lineWidth = 3.5;
-    ctx.shadowColor = '#00FFDD'; ctx.shadowBlur = 10;
-    ctx.beginPath(); ctx.moveTo(topL,horizonY()); ctx.lineTo(botL,H()); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(topR,horizonY()); ctx.lineTo(botR,H()); ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    ctx.strokeStyle = '#FFFF55';
-    const dashOffset = (elapsed*300) % 40;
-    const steps = 26;
-    ctx.lineWidth = 3.5;
-    for(let i=0;i<steps;i++){
-      const t0 = i/steps, t1 = i/steps + 0.03;
-      if(((i*40 - dashOffset) % 80 + 80) % 80 > 40) continue;
-      const y0 = roadYAt(t0), y1 = roadYAt(t1);
-      const w0 = lerp(2, 9, t0);
-      ctx.globalAlpha = clamp(t0*1.1,0.2,1);
-      ctx.beginPath(); ctx.moveTo(W()/2,y0); ctx.lineTo(W()/2,y1); ctx.lineWidth = w0; ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  function roundRect(ctx,x,y,w,h,r){
-    ctx.beginPath();
-    ctx.moveTo(x+r,y);
-    ctx.arcTo(x+w,y,x+w,y+h,r);
-    ctx.arcTo(x+w,y+h,x,y+h,r);
-    ctx.arcTo(x,y+h,x,y,r);
-    ctx.arcTo(x,y,x+w,y,r);
-    ctx.closePath();
-  }
-
-  function drawGatePortal(depth, side, laneFrac, resolved){
-    if(depth < 0 || depth > 1.3) return;
-    const y = roadYAt(depth);
-    const roadW = roadWidthAt(depth);
-    const laneW = roadW/2 - 6;
-    const cx = laneCenterX(depth, laneFrac);
-    
-    const portalW = laneW * 0.44;
-    const portalH = portalW * 1.25;
-    const fadeAlpha = clamp(depth * 4, 0, 1);
-    const alpha = (resolved ? clamp(1-(depth-PLAYER_DEPTH)*4,0,1) : 1) * fadeAlpha;
-    
-    const baseColor = side.isGood ? (side.isMega?'#00FF55':'#00FF7F') : (side.isMega?'#FF0033':'#FF3355');
-    const glowColor = side.isGood ? 'rgba(150,255,200,1)' : 'rgba(255,180,180,1)';
-
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(cx, y - portalH/2);
-    
-    ctx.shadowColor = baseColor;
-    ctx.shadowBlur = side.isMega ? 25 : 12;
-
-    const rx = portalW/2, ry = portalH/2;
-    roundRect(ctx, -rx, -ry, portalW, portalH, rx*0.85);
-    const grad = ctx.createRadialGradient(0,-ry*0.2,2, 0,0, Math.max(rx,ry));
-    grad.addColorStop(0, '#FFFFFF');
-    grad.addColorStop(0.5, baseColor);
-    grad.addColorStop(1, baseColor);
-    ctx.fillStyle = grad;
-    ctx.fill();
-    
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = clamp(portalW*0.12, 3, 8);
-    ctx.strokeStyle = '#0D1226';
-    ctx.stroke();
-
-    const fs = clamp(portalW*0.42, 9, 32);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = `800 ${fs}px 'Baloo 2', sans-serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=6;
-    const label = (side.value>0?'+':'') + side.value.toFixed(1);
-    if(depth > 0.02) ctx.fillText(label, 0, 2);
-    ctx.shadowBlur = 0;
-    if(side.isMega && depth > 0.1){
-      ctx.font = `800 ${Math.max(9, fs*0.44)}px 'Nunito', sans-serif`;
-      ctx.fillStyle = glowColor;
-      ctx.fillText('MEGA', 0, -ry - fs*0.6);
-    }
-    ctx.restore();
-  }
-
-  function drawFinishLine(depth){
-    if(depth < 0 || depth > 1.3) return;
-    const y = roadYAt(depth), w = roadWidthAt(depth);
-    const left = W()/2 - w/2, right = W()/2 + w/2;
-    const barH = lerp(3, 54, depth);
-    const squares = 14;
-    const sqW = (right-left)/squares;
-    ctx.save();
-    ctx.globalAlpha = clamp(depth * 3, 0, 1);
-    for(let i=0;i<squares;i++){
-      ctx.fillStyle = i%2===0 ? '#0D1226' : '#FFFFFF';
-      ctx.fillRect(left + i*sqW, y-barH/2, sqW+0.5, barH);
-    }
-    if(depth > 0.3){
-      const fs = clamp(barH*0.45, 11, 30);
-      ctx.fillStyle = '#FFD700'; ctx.font = `800 ${fs}px 'Baloo 2', sans-serif`;
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.strokeStyle='#0D1226'; ctx.lineWidth=3.5;
-      ctx.strokeText('ZIEL', W()/2, y - barH/2 - fs*0.5);
-      ctx.fillText('ZIEL', W()/2, y - barH/2 - fs*0.5);
-    }
-    ctx.restore();
-  }
-
-  function drawPlayer(ts){
-    const x = laneCenterX(PLAYER_DEPTH, player.dispLaneFrac);
-    const groundY = roadYAt(PLAYER_DEPTH);
-    const scale = heightScale(player.height);
-    const bobY = Math.sin(player.bob)*4.5*scale;
-    const fontSize = 96*scale;
-    const y = groundY - fontSize*0.42 + bobY;
-
-    ctx.save();
-    ctx.globalAlpha = 0.35; ctx.fillStyle = '#000';
-    ctx.beginPath(); ctx.ellipse(x, groundY+3, fontSize*0.44, 10, 0,0,7); ctx.fill();
-    ctx.restore();
-
-    const colorDef = getColorDef(stats.equippedColor);
-    ctx.save();
-    ctx.font = `800 ${fontSize}px 'Baloo 2', sans-serif`;
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    const half = fontSize*0.62;
-    const grad = makeCanvasGradient(ctx, x-half, y, x+half, y, colorDef, ts/1000);
-    ctx.fillStyle = grad;
-    ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=14; ctx.shadowOffsetY=6;
-    ctx.fillText('67', x, y);
-    ctx.restore();
-  }
-
-  function drawParticles(){
-    for(const p of particles){
-      ctx.save();
-      if(p.type==='text'){
-        ctx.globalAlpha = clamp(p.life,0,1); ctx.fillStyle = p.color;
-        ctx.font = `800 24px 'Baloo 2', sans-serif`; ctx.textAlign='center';
-        ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=6;
-        ctx.fillText(p.text, p.x, p.y);
-      } else if(p.type==='dot'){
-        ctx.globalAlpha = clamp(p.life/0.6,0,1); ctx.fillStyle = p.color;
-        ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,7); ctx.fill();
-      } else if(p.type==='confetti'){
-        ctx.globalAlpha = clamp(p.life/1.5,0,1);
-        ctx.translate(p.x,p.y); ctx.rotate(p.rot);
-        ctx.fillStyle = p.color; ctx.fillRect(-6,-3.5,12,7);
-      }
-      ctx.restore();
-    }
-  }
-
-  function updateHud(){
-    document.getElementById('hudCoins').textContent = stats.coins;
-    document.getElementById('hudHeightNum').textContent = player.height.toFixed(1)+' ft';
-    const pct = clamp((player.height-START_HEIGHT)/(GOAL_HEIGHT-START_HEIGHT)*100, 0, 100);
-    document.getElementById('hudHeightBar').style.width = pct+'%';
-    document.getElementById('hudTimer').textContent = Math.max(0, Math.ceil(TIME_LIMIT-elapsed));
-  }
-
-  function render(ts){
-    ctx.clearRect(0,0,W(),H());
-    drawSky();
-    drawGround();
-    const sorted = [...gates].sort((a,b)=>a.depth-b.depth);
-    for(const g of sorted){
-      drawGatePortal(g.depth, g.left, 0, g.resolved);
-      drawGatePortal(g.depth, g.right, 1, g.resolved);
-    }
-    if(finishLine) drawFinishLine(finishLine.depth);
-    drawPlayer(ts);
-    drawParticles();
-  }
-
-  function loop(ts){
-    if(lastTime===null) lastTime = ts;
-    let dt = (ts-lastTime)/1000; dt = Math.min(dt, 0.05); lastTime = ts;
-    if(state==='playing') update(dt);
-    else if(state==='result'){
-      for(const c of clouds){ c.x += c.speed*dt; if(c.x>W()+90) c.x=-90; }
-      particles = particles.filter(p=>p.life>0);
-      for(const p of particles){ p.life -= dt; if(p.type==='confetti'){ p.x += p.vx*dt; p.y += p.vy*dt; p.rot += p.vr*dt; } }
-    }
-    if(state==='playing' || state==='result') render(ts);
-    requestAnimationFrame(loop);
-  }
-  requestAnimationFrame(loop);
-
-  function showScreen(id){
-    document.getElementById('lobby').style.display = id==='lobby' ? 'flex' : 'none';
-    document.getElementById('hud').style.display = id==='playing' ? 'block' : 'none';
-    document.getElementById('result').style.display = id==='result' ? 'flex' : 'none';
-  }
-
-  function startGame(){
-    initAudioCtx();
-    sfxClick();
-    resetGame();
-    state = 'playing';
-    showScreen('playing');
-  }
-
-  function returnToLobby(){
-    sfxClick();
-    state = 'lobby';
-    showScreen('lobby');
-    renderLobbyStats();
-  }
-
-  function endGame(kind){
-    if(resultShown) return;
-    resultShown = true;
-    state = 'result';
-
-    let trophyWon = kind==='win';
-    const mult = 1.0 + stats.rebirths * 0.1;
-    const earnedCoins = Math.round(player.height * 100 * mult);
-    const earnedScore = Math.round(player.height * 100);
-
-    stats.coins += earnedCoins;
-    stats.score += earnedScore;
-    stats.games += 1;
-
-    if(player.height > stats.bestHeight) stats.bestHeight = player.height;
-    if(trophyWon){ stats.trophies += 1; sfxWin(); } else { sfxBad(); }
-    
-    saveUserData();
-
-    const emoji = document.getElementById('resEmoji');
-    const title = document.getElementById('resTitle');
-    const sub = document.getElementById('resSub');
-    const resStats = document.getElementById('resStats');
-
-    if(kind==='win'){
-      emoji.textContent = '🏆'; title.textContent = 'Pokal geholt!';
-      sub.textContent = `Du hast die Ziellinie bei ${player.height.toFixed(1)} ft überquert! (+1 🏆)`;
-      confettiBurst();
-    } else if(kind==='lose'){
-      emoji.textContent = '😵'; title.textContent = 'Zu klein!';
-      sub.textContent = `Du bist auf ${player.height.toFixed(1)} ft geschrumpft.`;
-    } else {
-      emoji.textContent = '🏁'; title.textContent = 'Ziellinie erreicht';
-      sub.textContent = `Du warst bei ${player.height.toFixed(1)} ft — knapp am Pokal vorbei.`;
-    }
-
-    resStats.innerHTML = `
-      <div class="stat-card"><div class="val">${player.height.toFixed(1)}</div><div class="lbl">Ft erreicht</div></div>
-      <div class="stat-card"><div class="val">+${earnedScore}</div><div class="lbl">Score</div></div>
-      <div class="stat-card"><div class="val">+${earnedCoins}</div><div class="lbl">Münzen</div></div>
-      <div class="stat-card"><div class="val">${trophyWon?'+1 🏆':'0'}</div><div class="lbl">Pokale</div></div>
-    `;
-
-    showScreen('result');
-    renderLobbyStats();
-  }
-
-  document.getElementById('playBtn').addEventListener('click', startGame);
-  document.getElementById('retryBtn').addEventListener('click', startGame);
-  document.getElementById('lobbyBtn').addEventListener('click', returnToLobby);
-  document.getElementById('exitBtn').addEventListener('click', returnToLobby);
-
-  /* INIT */
-  initClouds();
-  showScreen('lobby');
-  loadUserData();
-
-})();
-</script>
+        // Pop-up öffnen mit cleaner Animation
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        // Pop-up schließen
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Sanftes Wechseln zwischen Login- und Registrierungs-Fenster
+        function switchModal(currentId, targetId) {
+            closeModal(currentId);
+            setTimeout(() => {
+                openModal(targetId);
+            }, 150); // Kurze Verzögerung für einen fließenden Übergang
+        }
+
+        // Schließen, wenn man außerhalb des Pop-up-Fensters klickt
+        function handleOverlayClick(event, modalId) {
+            if (event.target.classList.contains('modal-overlay')) {
+                closeModal(modalId);
+            }
+        }
+
+        // Initial Leaderboard laden beim Start
+        renderLeaderboard();
+    </script>
 </body>
 </html>
