@@ -206,7 +206,7 @@
   <div class="stats-row" id="lobbyStats"></div>
 
   <div class="lobby-bottom">
-    <div class="goal-strip">Start bei 1.0 ft · Ziel 6.7 ft · Ziellinie nach 26s</div>
+    <div class="goal-strip">Start bei 1.0 ft · Ziel 6.7 ft · 100x ft Münzen am Ende</div>
     <div class="btn-row">
       <button class="play-btn" id="playBtn">▶ SPIELEN</button>
       <button class="lobby-rebirth-btn" id="lobbyRebirthBtn">⚡ Rebirth (5 🏆)</button>
@@ -464,7 +464,6 @@
   const ROAD_TOP_W = 0.10;
   const ROAD_BOTTOM_W = 0.88;
   const PLAYER_DEPTH = 0.90;
-  const BASE_COIN_REWARD = 50;
 
   function rand(a,b){ return a + Math.random()*(b-a); }
   function lerp(a,b,t){ return a+(b-a)*t; }
@@ -535,7 +534,6 @@
   let gates = [];
   let finishLine = null;
   let particles = [];
-  let coinsThisRun = 0;
   let elapsed = 0;
   let spawnTimer = 0;
   let lastTime = null;
@@ -552,7 +550,7 @@
   function resetGame(){
     player.lane = 0; player.dispLaneFrac = 0; player.height = START_HEIGHT; player.bob = 0;
     gates = []; finishLine = null; particles = [];
-    coinsThisRun = 0; elapsed = 0; spawnTimer = 1.0;
+    elapsed = 0; spawnTimer = 1.0;
     resultShown = false;
     initClouds();
   }
@@ -593,13 +591,6 @@
 
   function applyGateResult(side){
     player.height = clamp(player.height + side.value, 0, 20);
-    
-    if(side.value > 0){
-      const multiplier = 1.0 + stats.rebirths * 0.1;
-      const earned = Math.round(BASE_COIN_REWARD * multiplier);
-      coinsThisRun += earned;
-      spawnFloatingText(W()/2, H()*0.28, `+${earned} 🪙`, '#FFD700');
-    }
 
     if(side.isGood) sfxGood(); else sfxBad();
 
@@ -617,7 +608,7 @@
   }
   function confettiBurst(){
     const colors=['#FFD700','#00FF7F','#00BFFF','#FF3355','#FFFF66','#FF33CC'];
-    for(let i=0;i-100;i++){
+    for(let i=0;i<100;i++){
       particles.push({ type:'confetti', x: rand(0,W()), y:-20, vx: rand(-50,50), vy: rand(140,280),
         life: rand(2,3.5), color: colors[Math.floor(Math.random()*colors.length)], rot: rand(0,6.28), vr: rand(-5,5) });
     }
@@ -870,7 +861,7 @@
   }
 
   function updateHud(){
-    document.getElementById('hudCoins').textContent = stats.coins + coinsThisRun;
+    document.getElementById('hudCoins').textContent = stats.coins;
     document.getElementById('hudHeightNum').textContent = player.height.toFixed(1)+' ft';
     const pct = clamp((player.height-START_HEIGHT)/(GOAL_HEIGHT-START_HEIGHT)*100, 0, 100);
     document.getElementById('hudHeightBar').style.width = pct+'%';
@@ -934,8 +925,13 @@
     state = 'result';
 
     let trophyWon = kind==='win';
-    stats.coins += coinsThisRun;
+    
+    // 100x ft * Rebirth Multiplier
+    const mult = 1.0 + stats.rebirths * 0.1;
+    const earnedCoins = Math.round(player.height * 100 * mult);
+    stats.coins += earnedCoins;
     stats.games += 1;
+
     if(player.height > stats.bestHeight) stats.bestHeight = player.height;
     if(trophyWon){ stats.trophies += 1; sfxWin(); } else { sfxBad(); }
     saveStats();
@@ -959,7 +955,7 @@
 
     resStats.innerHTML = `
       <div class="stat-card"><div class="val">${player.height.toFixed(1)}</div><div class="lbl">Ft erreicht</div></div>
-      <div class="stat-card"><div class="val">+${coinsThisRun}</div><div class="lbl">Münzen</div></div>
+      <div class="stat-card"><div class="val">+${earnedCoins}</div><div class="lbl">Münzen</div></div>
       <div class="stat-card"><div class="val">${trophyWon?'+1 🏆':'0'}</div><div class="lbl">Pokale</div></div>
     `;
 
