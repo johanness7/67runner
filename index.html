@@ -75,14 +75,14 @@
   }
   @keyframes shadowPulse{ 0%,100%{transform:scaleX(1);opacity:0.4} 50%{transform:scaleX(0.7);opacity:0.2} }
 
-  .stats-row{ display:flex; gap:8px; z-index:2; margin-bottom:1vh; flex-wrap:wrap; justify-content:center; padding:0 16px; }
+  .stats-row{ display:flex; gap:6px; z-index:2; margin-bottom:1vh; flex-wrap:wrap; justify-content:center; padding:0 16px; }
   .stat-card{
-    background:var(--ink); color:var(--cream); border-radius:16px; padding:8px 12px;
-    min-width:70px; text-align:center; box-shadow:0 5px 0 rgba(0,0,0,0.35);
+    background:var(--ink); color:var(--cream); border-radius:14px; padding:6px 10px;
+    min-width:64px; text-align:center; box-shadow:0 5px 0 rgba(0,0,0,0.35);
     border:2.5px solid rgba(255,255,255,0.15);
   }
-  .stat-card .val{ font-family:var(--font-display); font-size:17px; font-weight:800; color:var(--gold); }
-  .stat-card .lbl{ font-size:9px; font-weight:900; letter-spacing:0.5px; opacity:0.85; text-transform:uppercase; }
+  .stat-card .val{ font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--gold); }
+  .stat-card .lbl{ font-size:8px; font-weight:900; letter-spacing:0.5px; opacity:0.85; text-transform:uppercase; }
 
   .lobby-bottom{ z-index:2; margin-bottom:3vh; display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; padding:0 16px; }
   .goal-strip{ font-size:clamp(11px, 3.2vw, 13px); font-weight:900; color:var(--ink); background:rgba(255,255,255,0.95); padding:6px 14px; border-radius:16px; box-shadow:0 3px 0 rgba(0,0,0,0.15); }
@@ -152,9 +152,10 @@
   }
   .shop-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
   .shop-title{ font-family:var(--font-display); font-weight:800; font-size:22px; color:var(--ink); margin:0; }
-  .shop-currency-row{ display:flex; gap:6px; align-items:center; }
-  .shop-coins{ font-family:var(--font-display); font-weight:800; color:var(--gold); background:var(--ink); padding:4px 10px; border-radius:12px; font-size:12px; }
-  .shop-trophies{ font-family:var(--font-display); font-weight:800; color:#FF33CC; background:var(--ink); padding:4px 10px; border-radius:12px; font-size:12px; }
+  .shop-currency-row{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+  .shop-coins{ font-family:var(--font-display); font-weight:800; color:var(--gold); background:var(--ink); padding:4px 8px; border-radius:12px; font-size:11px; }
+  .shop-score{ font-family:var(--font-display); font-weight:800; color:#00FF7F; background:var(--ink); padding:4px 8px; border-radius:12px; font-size:11px; }
+  .shop-trophies{ font-family:var(--font-display); font-weight:800; color:#FF33CC; background:var(--ink); padding:4px 8px; border-radius:12px; font-size:11px; }
   
   .rebirth-banner{
     background:linear-gradient(135deg, #7B2FF7, #FF1493);
@@ -206,7 +207,7 @@
   <div class="stats-row" id="lobbyStats"></div>
 
   <div class="lobby-bottom">
-    <div class="goal-strip">Start bei 1.0 ft · Ziel 6.7 ft · 100x ft Münzen am Ende</div>
+    <div class="goal-strip">Start bei 1.0 ft · Ziel 6.7 ft · 100x ft Münzen & Score</div>
     <div class="btn-row">
       <button class="play-btn" id="playBtn">▶ SPIELEN</button>
       <button class="lobby-rebirth-btn" id="lobbyRebirthBtn">⚡ Rebirth (5 🏆)</button>
@@ -250,6 +251,7 @@
       <h2 class="shop-title">🎨 Shop & Rebirth</h2>
       <div class="shop-currency-row">
         <div class="shop-coins">🪙 <span id="shopCoins">0</span></div>
+        <div class="shop-score">⭐ <span id="shopScore">0</span></div>
         <div class="shop-trophies">🏆 <span id="shopTrophies">0</span></div>
       </div>
     </div>
@@ -326,12 +328,12 @@
   ];
 
   /* ============ PERSISTENT STATS ============ */
-  const DEFAULT_STATS = { coins:0, bestHeight:1.0, trophies:0, games:0, rebirths:0, ownedColors:['sunset'], equippedColor:'sunset' };
+  const DEFAULT_STATS = { coins:0, score:0, bestHeight:1.0, trophies:0, games:0, rebirths:0, ownedColors:['sunset'], equippedColor:'sunset' };
   let stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
 
   function loadStats(){
     try{
-      const saved = localStorage.getItem('stats67_v4');
+      const saved = localStorage.getItem('stats67_v5');
       if(saved){
         const parsed = JSON.parse(saved);
         stats = {...DEFAULT_STATS, ...parsed};
@@ -344,7 +346,7 @@
     renderShop();
   }
   function saveStats(){
-    try{ localStorage.setItem('stats67_v4', JSON.stringify(stats)); }catch(e){}
+    try{ localStorage.setItem('stats67_v5', JSON.stringify(stats)); }catch(e){}
   }
 
   function renderLobbyStats(){
@@ -353,10 +355,10 @@
     const el = document.getElementById('lobbyStats');
     el.innerHTML = `
       <div class="stat-card"><div class="val">${stats.bestHeight.toFixed(1)}</div><div class="lbl">Beste ft</div></div>
+      <div class="stat-card"><div class="val">${stats.score}</div><div class="lbl">Score</div></div>
       <div class="stat-card"><div class="val">${stats.coins}</div><div class="lbl">Münzen</div></div>
       <div class="stat-card"><div class="val">${stats.trophies}</div><div class="lbl">Pokale</div></div>
       <div class="stat-card"><div class="val">${stats.rebirths}</div><div class="lbl">Rebirths</div></div>
-      <div class="stat-card"><div class="val">${mult}x</div><div class="lbl">Multi</div></div>
     `;
     const lobbyRBtn = document.getElementById('lobbyRebirthBtn');
     lobbyRBtn.textContent = `⚡ Rebirth (${nextRebirthCost} 🏆)`;
@@ -366,6 +368,7 @@
   /* ============ SHOP UI ============ */
   function renderShop(){
     document.getElementById('shopCoins').textContent = stats.coins;
+    document.getElementById('shopScore').textContent = stats.score;
     document.getElementById('shopTrophies').textContent = stats.trophies;
 
     const nextRebirthCost = (stats.rebirths + 1) * 5;
@@ -373,7 +376,7 @@
     const nextMult = (1.0 + (stats.rebirths + 1) * 0.1).toFixed(1);
     
     document.getElementById('rebirthTitle').textContent = `⚡ Rebirth ${stats.rebirths+1} (Aktuell: ${currentMult}x Münzen)`;
-    document.getElementById('rebirthDesc').textContent = `Setzt Münzen & Farben zurück, gibt dir aber dauerhaft ${nextMult}x Münzen!`;
+    document.getElementById('rebirthDesc').textContent = `Setzt Münzen & Farben zurück, gibt dir aber dauerhaft ${nextMult}x Münzen! (Score bleibt erhalten)`;
     const rBtn = document.getElementById('rebirthBtn');
     rBtn.textContent = `Rebirth kaufen (${nextRebirthCost} 🏆)`;
     rBtn.disabled = stats.trophies < nextRebirthCost;
@@ -430,7 +433,7 @@
     sfxRebirth();
     stats.trophies -= cost;
     stats.rebirths += 1;
-    stats.coins = 0;
+    stats.coins = 0; // Münzen werden laut Logik zurückgesetzt, Score bleibt absichtlich erhalten!
     stats.ownedColors = ['sunset'];
     stats.equippedColor = 'sunset';
     saveStats();
@@ -459,7 +462,7 @@
   const GOAL_HEIGHT = 6.7;
   const MIN_HEIGHT = 0.3;
   const TIME_LIMIT = 26;
-  const FINISH_LEAD = 3.6; 
+  const FINISH_LEAD = 4.2; // Etwas Puffer, damit die Finish-Linie früher angekündigt wird und keine Portale reinbuggen
   const HORIZON_FRAC = 0.40;
   const ROAD_TOP_W = 0.10;
   const ROAD_BOTTOM_W = 0.88;
@@ -624,7 +627,8 @@
     const speed = lerp(0.25, 0.46, difficultyT);
     const spawnEvery = lerp(2.4, 1.7, difficultyT);
 
-    if(elapsed < TIME_LIMIT - FINISH_LEAD){
+    // Stoppe neue Portal-Spawns rechtzeitig vor der Ziellinie, damit nichts buggt
+    if(elapsed < TIME_LIMIT - FINISH_LEAD - 0.8){
       spawnTimer -= dt;
       if(spawnTimer <= 0 && !finishLine){ spawnGate(); spawnTimer = spawnEvery; }
     }
@@ -926,10 +930,14 @@
 
     let trophyWon = kind==='win';
     
-    // 100x ft * Rebirth Multiplier
+    // Münzen mit Rebirth-Multiplikator
     const mult = 1.0 + stats.rebirths * 0.1;
     const earnedCoins = Math.round(player.height * 100 * mult);
+    // Score (wird niemals zurückgesetzt)
+    const earnedScore = Math.round(player.height * 100);
+
     stats.coins += earnedCoins;
+    stats.score += earnedScore;
     stats.games += 1;
 
     if(player.height > stats.bestHeight) stats.bestHeight = player.height;
@@ -955,6 +963,7 @@
 
     resStats.innerHTML = `
       <div class="stat-card"><div class="val">${player.height.toFixed(1)}</div><div class="lbl">Ft erreicht</div></div>
+      <div class="stat-card"><div class="val">+${earnedScore}</div><div class="lbl">Score</div></div>
       <div class="stat-card"><div class="val">+${earnedCoins}</div><div class="lbl">Münzen</div></div>
       <div class="stat-card"><div class="val">${trophyWon?'+1 🏆':'0'}</div><div class="lbl">Pokale</div></div>
     `;
